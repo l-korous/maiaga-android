@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="true"
+        jar="C:\Users\LK\.android\build-cache\96fb08a978152c740d9551d75b0b03b2ccbfbb2d\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.2"
+        sha1="44ee06abb66da30f5855e6bf54574e64cdcd982a">
+        <dex dex="C:\sw\androidbt\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_64ad6715c74f0fdcb40aefc708a02b799b872523\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\sw\adt-bundle-windows-x86_64-20140702\sdk\extras\m2repository\com\android\support\constraint\constraint-layout-solver\1.0.2\constraint-layout-solver-1.0.2.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.2"
+        sha1="b9cd8fc6bd15cb915735d34535db30ece0c44603">
+        <dex dex="C:\sw\androidbt\app\build\intermediates\transforms\dex\debug\folders\1000\10\constraint-layout-solver-1.0.2_79758362b35302dca481bda01fe0968b7f2f0981\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\sw\androidbt\app\build\intermediates\incremental-classes\debug\instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.2"
+        sha1="128f3ced594e0c48487b29b00d32675a7c5ffe16">
+        <dex dex="C:\sw\androidbt\app\build\intermediates\transforms\dex\debug\folders\1000\10000\instant-run-bootstrap_8577ea839ca7cf1e6d5c69debd7ff5292a522b61\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\sw\androidbt\app\build\intermediates\incremental-runtime-classes\debug\instant-run.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.2"
+        sha1="c82741bc129dd5f99f11a4ab8666ae24262053b6">
+        <dex dex="C:\sw\androidbt\app\build\intermediates\transforms\dex\debug\folders\1000\10000\instant-run_25f5ca01b009de4b0874b90d066b20e76d9e0377\classes.dex" />
+    </item>
+
+</items>
