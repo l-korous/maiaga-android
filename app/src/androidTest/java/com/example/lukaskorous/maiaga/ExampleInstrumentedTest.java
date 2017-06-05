@@ -1,4 +1,4 @@
-package com.example.lukas.myapplication;
+package com.example.lukaskorous.maiaga;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

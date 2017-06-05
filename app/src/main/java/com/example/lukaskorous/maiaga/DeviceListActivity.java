@@ -1,4 +1,4 @@
-package com.example.lukas.myapplication;
+package com.example.lukaskorous.maiaga;
 
 import java.util.Set;
 import android.app.Activity;

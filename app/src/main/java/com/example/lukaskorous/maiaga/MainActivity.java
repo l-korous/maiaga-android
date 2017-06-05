@@ -1,4 +1,4 @@
-package com.example.lukas.myapplication;
+package com.example.lukaskorous.maiaga;
 
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -18,8 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
-
-import static com.example.lukas.myapplication.R.id.textView;
 
 public class MainActivity extends AppCompatActivity {
     public static final String EXTRA_MESSAGE = "com.example.lukas.myapplication.MESSAGE";

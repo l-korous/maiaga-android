@@ -1,4 +1,4 @@
-package com.example.lukas.myapplication;
+package com.example.lukaskorous.maiaga;
 
 import org.junit.Test;
 
