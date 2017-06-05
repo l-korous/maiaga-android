@@ -1,0 +1,10 @@
+SET(TARGET "tinyGps")
+
+SET(TARGET_SRC
+  TinyGPS++.cpp
+  TinyGPS++.h
+  )
+
+  PROJECT(${TARGET})
+
+  ADD_LIBRARY(${TARGET} SHARED ${TARGET_SRC})
