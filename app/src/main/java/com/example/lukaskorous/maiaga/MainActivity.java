@@ -46,8 +46,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         textView = (TextView) findViewById(R.id.textView2);
-        textView.setText("");
-        textView.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
     }
 
     public void buttonClick(View view) {
@@ -135,14 +133,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    static {
+        System.loadLibrary("tinyGps");
+    }
+    public native void encode(short s);
+
+    public native double print();
+
     void beginListenForData()
     {
+        textView.setText("");
+
         final Handler handler = new Handler();
         final byte delimiter = 10; //This is the ASCII code for a newline character
 
         stopWorker = false;
         readBufferPosition = 0;
-        readBuffer = new byte[1024];
+        readBuffer = new byte[200000];
         workerThread = new Thread(new Runnable()
         {
             public void run()
@@ -151,34 +158,22 @@ public class MainActivity extends AppCompatActivity {
                 {
                     try
                     {
-                        int bytesAvailable = mmInStream.available();
+                        final int bytesAvailable = mmInStream.available();
                         if(bytesAvailable > 0)
                         {
-                            byte[] packetBytes = new byte[bytesAvailable];
+                            final byte[] packetBytes = new byte[bytesAvailable];
                             mmInStream.read(packetBytes);
                             for(int i=0;i<bytesAvailable;i++)
                             {
                                 byte b = packetBytes[i];
-                                if(b == delimiter)
-                                {
-                                    byte[] encodedBytes = new byte[readBufferPosition];
-                                    System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
-                                    final String data = new String(encodedBytes, "US-ASCII");
-                                    readBufferPosition = 0;
-
-                                    handler.post(new Runnable()
-                                    {
+                                encode(b);
+                                handler.post(new Runnable() {
                                         public void run()
                                         {
-                                            textView.append(data);
-                                            textView.append(" \r\n \n \r " + System.getProperty("line.separator"));
+                                            textView.append(Double.toString(print()));
+                                            textView.append("   ");
                                         }
-                                    });
-                                }
-                                else
-                                {
-                                    readBuffer[readBufferPosition++] = b;
-                                }
+                                });
                             }
                         }
                     }

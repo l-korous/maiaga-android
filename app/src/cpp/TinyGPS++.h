@@ -1,30 +1,18 @@
-/*
-TinyGPS++ - a small GPS library for Arduino providing universal NMEA parsing
-Based on work by and "distanceBetween" and "courseTo" courtesy of Maarten Lamers.
-Suggestion to add satellites, courseTo(), and cardinal() by Matt Monson.
-Location precision improvements suggested by Wayne Holder.
-Copyright (C) 2008-2013 Mikal Hart
-All rights reserved.
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
 #ifndef __TinyGPSPlus_h
 #define __TinyGPSPlus_h
 
+#include <sstream>
+ #include <string>
+
+ std::string doubleToString(double d)
+ {
+    std::ostringstream ss;
+    ss << d;
+    return ss.str();
+ }
+
 #include <limits.h>
+#include <jni.h>
 
 #define _GPS_VERSION "0.95" // software version of this library
 #define _GPS_MPH_PER_KNOT 1.15077945
@@ -259,4 +247,17 @@ private:
   bool endOfTermHandler();
 };
 
+TinyGPSPlus tinyGPSPlus;
+
+extern "C" {
+    JNIEXPORT void JNICALL
+    Java_com_example_lukaskorous_maiaga_MainActivity_encode(JNIEnv *env, jobject stuff, jshort s) {
+        tinyGPSPlus.encode((char)s);
+    }
+
+    JNIEXPORT jdouble JNICALL
+    Java_com_example_lukaskorous_maiaga_MainActivity_print(JNIEnv *env, jobject stuff, jobject instance) {
+        return tinyGPSPlus.location.lat();
+    }
+}
 #endif // def(__TinyGPSPlus_h)

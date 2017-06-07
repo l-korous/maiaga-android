@@ -1,34 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
-    <LinearLayout
+    android:layout_height="fill_parent" >
+
+<Button
+    android:id="@+id/button"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_centerHorizontal="true"
+    android:onClick="buttonClick"
+    android:text="Connect to Device" />
+
+<ScrollView
+android:layout_width="fill_parent"
+android:layout_height="fill_parent" >
+
+<RelativeLayout
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:padding="12dp" >
+
+
+    <TextView
+        android:id="@+id/textView2"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingBottom="4dp"
-        android:paddingTop="4dp"
-        android:paddingLeft="4dp"
-        android:paddingRight="4dp"
-        android:orientation="vertical">
+        android:layout_height="wrap_content" />
 
-        <Button
-            android:id="@+id/button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="22dp"
-            android:onClick="buttonClick"
-            android:text="Connect to Device" />
+</RelativeLayout>
 
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:textSize="10dp"
-            android:inputType="textMultiLine"
-            android:maxLines="10"
-            android:textColor="@android:color/black"/>
-    </LinearLayout>
+</ScrollView>
 </RelativeLayout>

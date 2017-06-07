@@ -1,10 +1,14 @@
-SET(TARGET "tinyGps")
+cmake_minimum_required(VERSION 3.4.1)
 
-SET(TARGET_SRC
-  TinyGPS++.cpp
-  TinyGPS++.h
-  )
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 
-  PROJECT(${TARGET})
+add_library(tinyGps SHARED
+           TinyGPS++.cpp
+           TinyGPS++.h)
 
-  ADD_LIBRARY(${TARGET} SHARED ${TARGET_SRC})
+# Include libraries needed for plasma lib
+target_link_libraries(tinyGps
+                      android
+                      jnigraphics
+                      log
+m)
