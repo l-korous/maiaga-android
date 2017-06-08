@@ -1,6 +1,5 @@
 package com.example.lukaskorous.maiaga;
 
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -9,111 +8,111 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.InputType;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String EXTRA_MESSAGE = "com.example.lukas.myapplication.MESSAGE";
-    private UUID applicationUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    public static final String errorMessageExtra = "com.example.lukas.myapplication.message";
+    public static final UUID applicationUUID = UUID.fromString("7b258380-4c5d-11e7-b114-b2f933d5fe66");
 
-    private static final int REQUEST_CONNECT_DEVICE = 1;
-    private static final int REQUEST_ENABLE_BT = 2;
+    private static final int requestDeviceConnect = 1;
+    private static final int requestBluetooth = 2;
 
-    private TextView textView;
+    private TextView mStatusTextView;
+    private TextView mErrorTextView;
 
     private BluetoothAdapter mBluetoothAdapter;
-    private ProgressDialog mBluetoothConnectProgressDialog;
     private BluetoothSocket mBluetoothSocket;
     private BluetoothDevice mBluetoothDevice;
-    private InputStream mmInStream;
+    private InputStream mInStream;
 
-    Thread workerThread;
-    byte[] readBuffer;
-    int readBufferPosition;
-    volatile boolean stopWorker;
+    private Processor mProcessor;
+    private Connector mConnector;
 
-    final int handlerState = 0;
+    private Handler mHandler = new Handler()
+    {
+        @Override
+        public void handleMessage(Message msg)
+        {
+            Bundle bundle = msg.getData();
+            String key = bundle.getString("key", "_");
+            switch(key) {
+                case "processorStatus":
+                case "connectorStatus":
+                default:
+                    Toast.makeText(MainActivity.this, getResources().getText(R.string.device_connected).toString(), Toast.LENGTH_LONG).show();
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
+
+        mProcessor = new Processor(mHandler);
+        mConnector = new Connector(mHandler);
+
         setContentView(R.layout.activity_main);
-        textView = (TextView) findViewById(R.id.textView2);
+        mStatusTextView = (TextView) findViewById(R.id.statusTextView);
+        mErrorTextView = (TextView) findViewById(R.id.errorTextView);
     }
 
     public void buttonClick(View view) {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
-            Intent intent = new Intent(this, DisplayMessageActivity.class);
-            intent.putExtra(EXTRA_MESSAGE, "no BT");
-            startActivity(intent);
+            mErrorTextView.setText(getResources().getText(R.string.no_bt).toString());
         }
         else {
             if (!mBluetoothAdapter.isEnabled()) {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            }
-            else {
+                startActivityForResult(enableBtIntent, requestBluetooth);
+            } else {
                 Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
-                startActivityForResult(connectIntent, REQUEST_CONNECT_DEVICE);
+                startActivityForResult(connectIntent, requestDeviceConnect);
             }
         }
     }
 
-    public void onActivityResult (int requestCode,
-                                  int resultCode,
-                                  Intent data) {
+    public void onActivityResult (int requestCode, int resultCode, Intent data) {
         switch (requestCode)
         {
-            case REQUEST_CONNECT_DEVICE:
+            case requestDeviceConnect:
                 if (resultCode == RESULT_OK)
                 {
                     Bundle mExtra = data.getExtras();
                     String mDeviceAddress = mExtra.getString("DeviceAddress");
                     mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(mDeviceAddress);
-                    mBluetoothConnectProgressDialog = ProgressDialog.show(this, "Connecting...", mBluetoothDevice.getName() + " : " + mBluetoothDevice.getAddress(), true, false);
                     try
                     {
                         mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
-                        mBluetoothAdapter.cancelDiscovery();
                         mBluetoothSocket.connect();
                         mHandler.sendEmptyMessage(0);
-                        mmInStream = mBluetoothSocket.getInputStream();
+                        mInStream = mBluetoothSocket.getInputStream();
 
                         beginListenForData();
                     }
                     catch (IOException eConnectException)
                     {
                         closeSocket(mBluetoothSocket);
-                        Intent intent = new Intent(this, DisplayMessageActivity.class);
-                        intent.putExtra(EXTRA_MESSAGE, "CouldNotConnectToSocket");
-                        startActivity(intent);
+                        mErrorTextView.setText(getResources().getText(R.string.cant_connect).toString());
                     }
                 }
                 break;
 
-            case REQUEST_ENABLE_BT:
+            case requestBluetooth:
                 if(resultCode == RESULT_OK) {
-                    Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-                    if (pairedDevices.size() > 0) {
-                        // There are paired devices. Get the name and address of each paired device.
-                        for (BluetoothDevice device : pairedDevices) {
-                            String deviceName = device.getName();
-                            String deviceHardwareAddress = device.getAddress(); // MAC address
-                        }
-                    }
+                    mBluetoothAdapter.cancelDiscovery();
+                    Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
+                    startActivityForResult(connectIntent, requestDeviceConnect);
                 }
                 else {
-                    Intent intent = new Intent(this, DisplayMessageActivity.class);
-                    intent.putExtra(EXTRA_MESSAGE, "denied BT");
-                    startActivity(intent);
+                    mErrorTextView.setText(getResources().getText(R.string.denied_bt).toString());
                 }
                 break;
         }
@@ -127,77 +126,19 @@ public class MainActivity extends AppCompatActivity {
         }
         catch (IOException ex)
         {
-            Intent intent = new Intent(this, DisplayMessageActivity.class);
-            intent.putExtra(EXTRA_MESSAGE, "CouldNotCloseSocket");
-            startActivity(intent);
+            mErrorTextView.setText(getResources().getText(R.string.could_not_close_socket).toString());
         }
     }
 
-    static {
-        System.loadLibrary("tinyGps");
-    }
-    public native void encode(short s);
-
-    public native double print();
 
     void beginListenForData()
     {
-        textView.setText("");
+        mStatusTextView.setText("");
 
         final Handler handler = new Handler();
-        final byte delimiter = 10; //This is the ASCII code for a newline character
 
-        stopWorker = false;
-        readBufferPosition = 0;
-        readBuffer = new byte[200000];
-        workerThread = new Thread(new Runnable()
-        {
-            public void run()
-            {
-                while(!Thread.currentThread().isInterrupted() && !stopWorker)
-                {
-                    try
-                    {
-                        final int bytesAvailable = mmInStream.available();
-                        if(bytesAvailable > 0)
-                        {
-                            final byte[] packetBytes = new byte[bytesAvailable];
-                            mmInStream.read(packetBytes);
-                            for(int i=0;i<bytesAvailable;i++)
-                            {
-                                byte b = packetBytes[i];
-                                encode(b);
-                                handler.post(new Runnable() {
-                                        public void run()
-                                        {
-                                            textView.append(Double.toString(print()));
-                                            textView.append("   ");
-                                        }
-                                });
-                            }
-                        }
-                    }
-                    catch (IOException ex)
-                    {
-                        stopWorker = true;
-                    }
-                }
-            }
-        });
+        Thread workerThread = new Thread(mProcessor);
 
         workerThread.start();
     }
-
-    private Handler mHandler = new Handler()
-    {
-        byte[] buffer = new byte[256];
-        int bytes;
-
-        @Override
-        public void handleMessage(Message msg)
-        {
-            mBluetoothConnectProgressDialog.dismiss();
-            Toast.makeText(MainActivity.this, "Device Connected", Toast.LENGTH_LONG).show();
-        }
-    };
 }

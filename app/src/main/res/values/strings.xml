@@ -1,5 +1,11 @@
 <resources>
-    <string name="app_name">My Application</string>
-    <string name="title_paired_devices">Paired devices</string>
-    <string name="none_paired">No paired device</string>
+    <string name="app_name">Maiaga</string>
+    <string name="title_paired_devices">Paired Maiaga devices</string>
+    <string name="none_paired">No paired Maiaga device - go to your Bluetooth settings and pair your Maiaga device.</string>
+    <string name="cant_connect">Could not connect to a Maiaga device, verify that it is on.</string>
+    <string name="denied_bt">You need to approve turning on Bluetooth functionality, in order for this application to work.</string>
+    <string name="could_not_close_socket">Could not close socket.</string>
+    <string name="device_connected">Maiaga device Connected.</string>
+    <string name="connect_to_device">Connect to Device</string>
+    <string name="no_bt">There is no bluetooth available on your phone / tablet / laptop.</string>
 </resources>

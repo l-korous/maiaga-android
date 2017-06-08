@@ -1,11 +1,17 @@
 package com.example.lukaskorous.maiaga;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -15,7 +21,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 
-public class DeviceListActivity extends Activity
+public class DeviceListActivity extends AppCompatActivity
 {
     protected static final String TAG = "TAG";
     private BluetoothAdapter mBluetoothAdapter;
@@ -24,8 +30,9 @@ public class DeviceListActivity extends Activity
     @Override
     protected void onCreate(Bundle mSavedInstanceState)
     {
+        Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
+
         super.onCreate(mSavedInstanceState);
-        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.activity_device_list);
 
         setResult(Activity.RESULT_CANCELED);
@@ -36,7 +43,12 @@ public class DeviceListActivity extends Activity
         mPairedListView.setOnItemClickListener(mDeviceClickListener);
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        Set<BluetoothDevice> mPairedDevices = mBluetoothAdapter.getBondedDevices();
+        List<BluetoothDevice> mAllPairedDevices = new ArrayList<BluetoothDevice>(mBluetoothAdapter.getBondedDevices());
+        List<BluetoothDevice> mPairedDevices =  new ArrayList<BluetoothDevice>();
+        for (BluetoothDevice mDevice : mAllPairedDevices) {
+            if(mDevice.getName().startsWith("Maiaga"))
+                mPairedDevices.add(mDevice);
+        }
 
         if (mPairedDevices.size() > 0)
         {
@@ -67,7 +79,6 @@ public class DeviceListActivity extends Activity
     {
         public void onItemClick(AdapterView<?> mAdapterView, View mView, int mPosition, long mLong)
         {
-            mBluetoothAdapter.cancelDiscovery();
             String mDeviceInfo = ((TextView) mView).getText().toString();
             String mDeviceAddress = mDeviceInfo.substring(mDeviceInfo.length() - 17);
             Log.v(TAG, "Device_Address " + mDeviceAddress);
@@ -80,5 +91,4 @@ public class DeviceListActivity extends Activity
             finish();
         }
     };
-
 }

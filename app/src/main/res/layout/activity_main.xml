@@ -1,32 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
 
-<Button
-    android:id="@+id/button"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_centerHorizontal="true"
-    android:onClick="buttonClick"
-    android:text="Connect to Device" />
-
-<ScrollView
-android:layout_width="fill_parent"
-android:layout_height="fill_parent" >
-
-<RelativeLayout
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:padding="12dp" >
-
+    <Button
+        android:id="@+id/button"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:onClick="buttonClick"
+        android:text="@string/connect_to_device"
+        app:layout_constraintTop_toBottomOf="@+id/statusTextView"
+        app:layout_goneMarginTop="20dp"
+        android:layout_marginTop="20dp"/>
 
     <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:id="@+id/statusTextView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"/>
 
-</RelativeLayout>
+    <TextView
+        android:id="@+id/errorTextView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/button"
+        app:layout_goneMarginTop="20dp"
+        android:layout_marginTop="20dp"/>
 
-</ScrollView>
-</RelativeLayout>
+</android.support.constraint.ConstraintLayout>
