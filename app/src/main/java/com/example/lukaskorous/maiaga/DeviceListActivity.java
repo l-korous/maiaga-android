@@ -80,7 +80,6 @@ public class DeviceListActivity extends AppCompatActivity
     {
         public void onItemClick(AdapterView<?> mAdapterView, View mView, int mPosition, long mLong)
         {
-            mBluetoothAdapter.cancelDiscovery();
             String mDeviceInfo = ((TextView) mView).getText().toString();
             String mDeviceAddress = mDeviceInfo.substring(mDeviceInfo.length() - 17);
             Bundle mBundle = new Bundle();

@@ -8,4 +8,5 @@
     <string name="device_connected">Maiaga device Connected.</string>
     <string name="connect_to_device">Connect to Device</string>
     <string name="no_bt">There is no bluetooth available on your phone / tablet / laptop.</string>
+    <string name="disconnected">Maiaga device disconnected / out of range.</string>
 </resources>

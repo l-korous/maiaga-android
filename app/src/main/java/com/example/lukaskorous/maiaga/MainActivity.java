@@ -19,7 +19,6 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     public static final String errorMessageExtra = "com.example.lukas.myapplication.message";
-    public static final UUID applicationUUID = UUID.fromString("7b258380-4c5d-11e7-b114-b2f933d5fe66");
 
     private static final int requestDeviceConnect = 1;
     private static final int requestBluetooth = 2;
@@ -43,9 +42,27 @@ public class MainActivity extends AppCompatActivity {
         {
             Bundle bundle = msg.getData();
             String key = bundle.getString("key", "_");
+            String data = bundle.getString("data", "_");
+
             switch(key) {
+                case "processorData":
+                    mStatusTextView.setText(data);
+                    break;
                 case "processorStatus":
                 case "connectorStatus":
+                    switch(data) {
+                        case "connected":
+                            mStatusTextView.setText("");
+                            Toast.makeText(MainActivity.this, getResources().getText(R.string.device_connected).toString(), Toast.LENGTH_SHORT).show();
+                            mBluetoothConnectProgressDialog.dismiss();
+                            new Thread(mProcessor).start();
+                            break;
+                        case "cantConnect":
+                            mProcessor.stop();
+                            mErrorTextView.setText(getResources().getText(R.string.disconnected).toString());
+                            break;
+                    }
+                    break;
                 default:
                     mBluetoothConnectProgressDialog.dismiss();
                     Toast.makeText(MainActivity.this, getResources().getText(R.string.device_connected).toString(), Toast.LENGTH_LONG).show();
@@ -59,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
         Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
 
         mProcessor = new Processor(mHandler);
-        mConnector = new Connector(mHandler);
+        mConnector = new Connector(mHandler, mProcessor);
 
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
@@ -88,26 +105,10 @@ public class MainActivity extends AppCompatActivity {
             case requestDeviceConnect:
                 if (resultCode == RESULT_OK)
                 {
-                    Bundle mExtra = data.getExtras();
-                    String mDeviceAddress = mExtra.getString("DeviceAddress");
-                    mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(mDeviceAddress);
+                    mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(data.getExtras().getString("DeviceAddress"));
+                    mConnector.setDevice(mBluetoothDevice);
                     mBluetoothConnectProgressDialog = ProgressDialog.show(this, "Connecting...", mBluetoothDevice.getName() + " : " + mBluetoothDevice.getAddress(), true, false);
-                    try
-                    {
-                        mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
-                        mBluetoothAdapter.cancelDiscovery();
-                        mBluetoothSocket.connect();
-                        mHandler.sendEmptyMessage(0);
-                        mProcessor.setStream(mBluetoothSocket.getInputStream());
-
-                        beginListenForData();
-                    }
-                    catch (IOException eConnectException)
-                    {
-                        closeSocket(mBluetoothSocket);
-                        mBluetoothConnectProgressDialog.dismiss();
-                        mErrorTextView.setText(getResources().getText(R.string.cant_connect).toString());
-                    }
+                    new Thread(mConnector).start();
                 }
                 break;
 
@@ -122,29 +123,5 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
         }
-    }
-
-    private void closeSocket(BluetoothSocket nOpenSocket)
-    {
-        try
-        {
-            nOpenSocket.close();
-        }
-        catch (IOException ex)
-        {
-            mErrorTextView.setText(getResources().getText(R.string.could_not_close_socket).toString());
-        }
-    }
-
-
-    void beginListenForData()
-    {
-        mStatusTextView.setText("");
-
-        final Handler handler = new Handler();
-
-        Thread workerThread = new Thread(mProcessor);
-
-        workerThread.start();
     }
 }

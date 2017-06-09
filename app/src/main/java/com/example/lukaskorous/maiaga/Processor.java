@@ -37,11 +37,7 @@ public class Processor implements Runnable {
                     {
                         byte b = packetBytes[i];
                         encode(b);
-                        Message msg = mHandler.obtainMessage();
-                        Bundle bundle = new Bundle();
-                        bundle.putString("data", Double.toString(print()));
-                        msg.setData(bundle);
-                        mHandler.sendMessage(msg);
+                        sendMessage("processorData", Double.toString(print()));
                     }
 
                 }
@@ -49,11 +45,7 @@ public class Processor implements Runnable {
             catch (IOException ex)
             {
                 mStop = true;
-                Message msg = mHandler.obtainMessage();
-                Bundle bundle = new Bundle();
-                bundle.putString("status", "disconnected");
-                msg.setData(bundle);
-                mHandler.sendMessage(msg);
+                sendMessage("processorStatus", "ioException");
             }
         }
     }
@@ -64,6 +56,15 @@ public class Processor implements Runnable {
 
     public void setStream(InputStream inStream) {
         mInStream = inStream;
+    }
+
+    private void sendMessage(String key, String data) {
+        Message msg = mHandler.obtainMessage();
+        Bundle bundle = new Bundle();
+        bundle.putString("key", key);
+        bundle.putString("data", data);
+        msg.setData(bundle);
+        mHandler.sendMessage(msg);
     }
 
     private Handler mHandler;
