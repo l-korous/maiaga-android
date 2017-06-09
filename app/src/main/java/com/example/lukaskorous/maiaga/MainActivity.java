@@ -1,5 +1,6 @@
 package com.example.lukaskorous.maiaga;
 
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -25,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView mStatusTextView;
     private TextView mErrorTextView;
+    private ProgressDialog mBluetoothConnectProgressDialog;
 
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothSocket mBluetoothSocket;
@@ -45,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
                 case "processorStatus":
                 case "connectorStatus":
                 default:
+                    mBluetoothConnectProgressDialog.dismiss();
                     Toast.makeText(MainActivity.this, getResources().getText(R.string.device_connected).toString(), Toast.LENGTH_LONG).show();
             }
         }
@@ -88,9 +91,11 @@ public class MainActivity extends AppCompatActivity {
                     Bundle mExtra = data.getExtras();
                     String mDeviceAddress = mExtra.getString("DeviceAddress");
                     mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(mDeviceAddress);
+                    mBluetoothConnectProgressDialog = ProgressDialog.show(this, "Connecting...", mBluetoothDevice.getName() + " : " + mBluetoothDevice.getAddress(), true, false);
                     try
                     {
                         mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
+                        mBluetoothAdapter.cancelDiscovery();
                         mBluetoothSocket.connect();
                         mHandler.sendEmptyMessage(0);
                         mProcessor.setStream(mBluetoothSocket.getInputStream());
@@ -100,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
                     catch (IOException eConnectException)
                     {
                         closeSocket(mBluetoothSocket);
+                        mBluetoothConnectProgressDialog.dismiss();
                         mErrorTextView.setText(getResources().getText(R.string.cant_connect).toString());
                     }
                 }

@@ -33,6 +33,7 @@ public class DeviceListActivity extends AppCompatActivity
         Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
 
         super.onCreate(mSavedInstanceState);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.activity_device_list);
 
         setResult(Activity.RESULT_CANCELED);
@@ -79,10 +80,9 @@ public class DeviceListActivity extends AppCompatActivity
     {
         public void onItemClick(AdapterView<?> mAdapterView, View mView, int mPosition, long mLong)
         {
+            mBluetoothAdapter.cancelDiscovery();
             String mDeviceInfo = ((TextView) mView).getText().toString();
             String mDeviceAddress = mDeviceInfo.substring(mDeviceInfo.length() - 17);
-            Log.v(TAG, "Device_Address " + mDeviceAddress);
-
             Bundle mBundle = new Bundle();
             mBundle.putString("DeviceAddress", mDeviceAddress);
             Intent mBackIntent = new Intent();
