@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
                         mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
                         mBluetoothSocket.connect();
                         mHandler.sendEmptyMessage(0);
-                        mInStream = mBluetoothSocket.getInputStream();
+                        mProcessor.setStream(mBluetoothSocket.getInputStream());
 
                         beginListenForData();
                     }

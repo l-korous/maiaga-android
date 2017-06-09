@@ -62,6 +62,10 @@ public class Processor implements Runnable {
         mStop = true;
     }
 
+    public void setStream(InputStream inStream) {
+        mInStream = inStream;
+    }
+
     private Handler mHandler;
     private boolean mStop;
     private InputStream mInStream;
