@@ -5,4 +5,14 @@ package com.maiaga;
  */
 
 public class LogItem {
+    @Override
+    public String toString() {
+        return date + " " + time + "   " +
+                "Lat: " + lat +
+                "Long: " + lng +
+                "Alt: " + alt +
+                "Speed: " + speed;
+    }
+    double lat, lng, alt, speed;
+    long date, time;
 }

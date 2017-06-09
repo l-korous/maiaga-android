@@ -3,6 +3,7 @@ package com.maiaga;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +22,13 @@ public class Processor implements Runnable {
     }
     public native void encode(short s);
 
-    public native double print();
+    public native double lat();
+    public native double lng();
+    public native double alt();
+    public native double speed();
+    public native long date();
+    public native long time();
+    public native boolean newDataAvailable();
 
     @Override
     public void run() {
@@ -40,10 +47,20 @@ public class Processor implements Runnable {
                     {
                         byte b = packetBytes[i];
                         encode(b);
-                        sendMessage("processorData", Double.toString(print()));
                     }
 
                 }
+                if(newDataAvailable()) {
+                    LogItem logItem = new LogItem();
+                    logItem.lat = lat();
+                    logItem.lng = lng();
+                    logItem.alt = alt();
+                    logItem.speed = speed();
+                    logItem.date = date();
+                    logItem.time = time();
+                    sendMessage("processorData", logItem.toString());
+                }
+
             }
             catch (IOException ex)
             {

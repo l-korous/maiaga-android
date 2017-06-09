@@ -256,8 +256,38 @@ extern "C" {
     }
 
     JNIEXPORT jdouble JNICALL
-    Java_com_maiaga_Processor_print(JNIEnv *env, jobject stuff, jobject instance) {
+    Java_com_maiaga_Processor_lat(JNIEnv *env, jobject instance) {
         return tinyGPSPlus.location.lat();
+    }
+
+    JNIEXPORT jdouble JNICALL
+    Java_com_maiaga_Processor_lng(JNIEnv *env, jobject instance) {
+        return tinyGPSPlus.location.lng();
+    }
+
+    JNIEXPORT jdouble JNICALL
+    Java_com_maiaga_Processor_alt(JNIEnv *env, jobject instance) {
+        return tinyGPSPlus.altitude.meters();
+    }
+
+    JNIEXPORT jdouble JNICALL
+    Java_com_maiaga_Processor_speed(JNIEnv *env, jobject instance) {
+        return tinyGPSPlus.speed.mps();
+    }
+
+    JNIEXPORT jlong JNICALL
+    Java_com_maiaga_Processor_date(JNIEnv *env, jobject instance) {
+        return tinyGPSPlus.date.value();
+    }
+
+    JNIEXPORT jlong JNICALL
+    Java_com_maiaga_Processor_time(JNIEnv *env, jobject instance) {
+        return tinyGPSPlus.time.value();
+    }
+
+    JNIEXPORT jboolean JNICALL
+    Java_com_maiaga_Processor_newDataAvailable(JNIEnv *env, jobject instance) {
+         return tinyGPSPlus.time.isUpdated();
     }
 }
 #endif // def(__TinyGPSPlus_h)

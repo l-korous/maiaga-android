@@ -12,13 +12,11 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.lukaskorous.maiaga.R;
+import com.maiaga.R;
 
 import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String errorMessageExtra = "com.maiaga.message";
-
     private static final int requestDeviceConnect = 1;
     private static final int requestBluetooth = 2;
 
@@ -28,7 +26,6 @@ public class MainActivity extends AppCompatActivity {
 
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mBluetoothDevice;
-    private InputStream mInStream;
 
     private Processor mProcessor;
     private Connector mConnector;
@@ -84,9 +81,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         mProcessor = new Processor(mHandler);
-        mConnector = new Connector(mHandler, mProcessor);
+        mConnector = new Connector(mHandler, mProcessor, mBluetoothAdapter);
 
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
@@ -94,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void buttonClick(View view) {
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
         if (mBluetoothAdapter == null) {
             showErrorStatus(getResources().getText(R.string.no_bt).toString());
         }
@@ -162,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void hideProgress() {
-        mProgressDialog.dismiss();
+        if(mProgressDialog != null)
+            mProgressDialog.dismiss();
     }
 }

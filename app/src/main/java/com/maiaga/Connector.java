@@ -15,11 +15,12 @@ public class Connector implements Runnable {
     public static final UUID applicationUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final int mmaxConnectionAttempts = 10;
 
-    Connector(Handler handler, Processor processor) {
+    Connector(Handler handler, Processor processor, BluetoothAdapter bluetoothAdapter) {
         mHandler = handler;
         mStop = false;
         mConnected = false;
         mProcessor = processor;
+        mBluetoothAdapter = bluetoothAdapter;
     }
 
     @Override

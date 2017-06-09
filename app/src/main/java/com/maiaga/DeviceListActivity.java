@@ -17,7 +17,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 
-import com.example.lukaskorous.maiaga.R;
+import com.maiaga.R;
 
 public class DeviceListActivity extends AppCompatActivity
 {

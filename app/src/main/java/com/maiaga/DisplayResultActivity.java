@@ -3,7 +3,7 @@ package com.maiaga;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import com.example.lukas.myapplication.R;
+import com.maiaga.R;
 
 public class DisplayResultActivity extends AppCompatActivity {
 
