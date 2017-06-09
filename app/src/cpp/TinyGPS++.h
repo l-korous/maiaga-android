@@ -251,12 +251,12 @@ TinyGPSPlus tinyGPSPlus;
 
 extern "C" {
     JNIEXPORT void JNICALL
-    Java_com_example_lukaskorous_maiaga_Processor_encode(JNIEnv *env, jobject stuff, jshort s) {
+    Java_com_maiaga_Processor_encode(JNIEnv *env, jobject stuff, jshort s) {
         tinyGPSPlus.encode((char)s);
     }
 
     JNIEXPORT jdouble JNICALL
-    Java_com_example_lukaskorous_maiaga_Processor_print(JNIEnv *env, jobject stuff, jobject instance) {
+    Java_com_maiaga_Processor_print(JNIEnv *env, jobject stuff, jobject instance) {
         return tinyGPSPlus.location.lat();
     }
 }

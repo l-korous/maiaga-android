@@ -1,4 +1,4 @@
-package com.example.lukaskorous.maiaga;
+package com.maiaga;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -7,11 +7,14 @@ import android.os.Message;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 
 public class Processor implements Runnable {
     Processor(Handler handler) {
         mHandler = handler;
     }
+
+    private ArrayList<LogItem> log;
 
     static {
         System.loadLibrary("tinyGps");
@@ -52,6 +55,11 @@ public class Processor implements Runnable {
 
     public void stop() {
         mStop = true;
+    }
+
+    public void reset() {
+        stop();
+        log.clear();
     }
 
     public void setStream(InputStream inStream) {

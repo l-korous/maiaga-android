@@ -1,4 +1,4 @@
-package com.example.lukaskorous.maiaga;
+package com.maiaga;
 
 import android.app.Activity;
 import android.content.Context;

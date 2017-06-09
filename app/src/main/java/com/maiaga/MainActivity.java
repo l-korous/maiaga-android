@@ -1,9 +1,8 @@
-package com.example.lukaskorous.maiaga;
+package com.maiaga;
 
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
@@ -13,22 +12,21 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
+import com.example.lukaskorous.maiaga.R;
+
 import java.io.InputStream;
-import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String errorMessageExtra = "com.example.lukas.myapplication.message";
+    public static final String errorMessageExtra = "com.maiaga.message";
 
     private static final int requestDeviceConnect = 1;
     private static final int requestBluetooth = 2;
 
     private TextView mStatusTextView;
     private TextView mErrorTextView;
-    private ProgressDialog mBluetoothConnectProgressDialog;
+    private ProgressDialog mProgressDialog;
 
     private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothSocket mBluetoothSocket;
     private BluetoothDevice mBluetoothDevice;
     private InputStream mInStream;
 
@@ -49,23 +47,35 @@ public class MainActivity extends AppCompatActivity {
                     mStatusTextView.setText(data);
                     break;
                 case "processorStatus":
+                    switch(data) {
+                        case "ioException":
+                            showOkProgress("Reconnecting...");
+                            new Thread(mConnector).start();
+                            break;
+                        case "noGpsData":
+                            break;
+                        case "throwBegin":
+                            break;
+                        case "throwEnd":
+                            break;
+                    }
                 case "connectorStatus":
                     switch(data) {
                         case "connected":
                             mStatusTextView.setText("");
-                            Toast.makeText(MainActivity.this, getResources().getText(R.string.device_connected).toString(), Toast.LENGTH_SHORT).show();
-                            mBluetoothConnectProgressDialog.dismiss();
+                            showOkStatus(getResources().getText(R.string.device_connected).toString());
                             new Thread(mProcessor).start();
                             break;
                         case "cantConnect":
-                            mProcessor.stop();
-                            mErrorTextView.setText(getResources().getText(R.string.disconnected).toString());
+                            mProcessor.reset();
+                            showErrorStatus(getResources().getText(R.string.disconnected).toString());
                             break;
                     }
                     break;
+                // Empty message
                 default:
-                    mBluetoothConnectProgressDialog.dismiss();
-                    Toast.makeText(MainActivity.this, getResources().getText(R.string.device_connected).toString(), Toast.LENGTH_LONG).show();
+                    hideProgress();
+                    showOkStatus(getResources().getText(R.string.device_connected).toString());
             }
         }
     };
@@ -86,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
     public void buttonClick(View view) {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
-            mErrorTextView.setText(getResources().getText(R.string.no_bt).toString());
+            showErrorStatus(getResources().getText(R.string.no_bt).toString());
         }
         else {
             if (!mBluetoothAdapter.isEnabled()) {
@@ -107,7 +117,8 @@ public class MainActivity extends AppCompatActivity {
                 {
                     mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(data.getExtras().getString("DeviceAddress"));
                     mConnector.setDevice(mBluetoothDevice);
-                    mBluetoothConnectProgressDialog = ProgressDialog.show(this, "Connecting...", mBluetoothDevice.getName() + " : " + mBluetoothDevice.getAddress(), true, false);
+                    showOkProgress("Connecting...", mBluetoothDevice.getName());
+                    mHandler.sendEmptyMessage(0);
                     new Thread(mConnector).start();
                 }
                 break;
@@ -119,9 +130,38 @@ public class MainActivity extends AppCompatActivity {
                     startActivityForResult(connectIntent, requestDeviceConnect);
                 }
                 else {
-                    mErrorTextView.setText(getResources().getText(R.string.denied_bt).toString());
+                    showErrorStatus(getResources().getText(R.string.denied_bt).toString());
                 }
                 break;
         }
+    }
+
+    private void showOkProgress(String status) {
+        clearStatuses();
+        mProgressDialog = ProgressDialog.show(this, status, "", true, false);
+    }
+
+    private void showOkProgress(String status, String detail) {
+        clearStatuses();
+        mProgressDialog = ProgressDialog.show(this, status, detail, true, false);
+    }
+
+    private void showOkStatus(String status) {
+        clearStatuses();
+        Toast.makeText(MainActivity.this, status, Toast.LENGTH_LONG).show();
+    }
+
+    private void showErrorStatus(String status) {
+        clearStatuses();
+        mErrorTextView.setText(status);
+    }
+
+    private void clearStatuses() {
+        mErrorTextView.setText("");
+        hideProgress();
+    }
+
+    private void hideProgress() {
+        mProgressDialog.dismiss();
     }
 }
