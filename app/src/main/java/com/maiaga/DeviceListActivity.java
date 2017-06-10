@@ -45,7 +45,7 @@ public class DeviceListActivity extends AppCompatActivity
         List<BluetoothDevice> mAllPairedDevices = new ArrayList<BluetoothDevice>(mBluetoothAdapter.getBondedDevices());
         List<BluetoothDevice> mPairedDevices =  new ArrayList<BluetoothDevice>();
         for (BluetoothDevice mDevice : mAllPairedDevices) {
-            if(mDevice.getName().startsWith("Maiaga"))
+            if(mDevice.getName().startsWith("MAIAGA"))
                 mPairedDevices.add(mDevice);
         }
 
