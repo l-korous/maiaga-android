@@ -37,42 +37,43 @@ public class MainActivity extends AppCompatActivity {
         {
             Bundle bundle = msg.getData();
             String key = bundle.getString("key", "_");
-            String data = bundle.getString("data", "_");
 
             switch(key) {
                 case "processorData":
+                    String data = bundle.getString("data", "_");
                     mStatusTextView.setText(data);
                     break;
-                case "processorStatus":
-                    switch(data) {
-                        case "ioException":
+                case "processorConnectionState":
+                    ConnectionState connectionState = ConnectionState.valueOf(bundle.getString("data"));
+                    switch(connectionState) {
+                        case TryingToFetchData:
+                            showOkProgress("Initializing...");
+                            break;
+                        case FetchingDataNoGps:
+                            showOkProgress("Connected, waiting GPS data...");
+                            break;
+                        case FetchingDataNoDataTemporary:
+                            showOkProgress("Bad bluetooth signal, get closer to MAIAGA device...");
+                            break;
+                        case FetchingDataNoDataShouldReconnect:
                             showOkProgress("Reconnecting...");
                             new Thread(mConnector).start();
                             break;
-                        case "noGpsData":
-                            break;
-                        case "throwBegin":
-                            break;
-                        case "throwEnd":
-                            break;
                     }
-                case "connectorStatus":
-                    switch(data) {
-                        case "connected":
-                            mStatusTextView.setText("");
-                            showOkStatus(getResources().getText(R.string.device_connected).toString());
-                            new Thread(mProcessor).start();
+                case "processorThrowState":
+                    ThrowState throwState = ThrowState.valueOf(bundle.getString("data"));
+                    switch(throwState) {
+                        case NoThrow:
+                            // Tohle je blby, to se nema stavat, na NoThrow se dostane Processor tak, ze by nemel poslat zpravu (pri inicializaci runu)
                             break;
-                        case "cantConnect":
+                        case InThrow:
+                            showOkProgress("Flying...");
+                        case AfterThrow:
                             mProcessor.reset();
-                            showErrorStatus(getResources().getText(R.string.disconnected).toString());
+                            showOkStatus("Cooool");
                             break;
                     }
                     break;
-                // Empty message
-                default:
-                    hideProgress();
-                    showOkStatus(getResources().getText(R.string.device_connected).toString());
             }
         }
     };
@@ -116,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
                     mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(data.getExtras().getString("DeviceAddress"));
                     mConnector.setDevice(mBluetoothDevice);
                     showOkProgress("Connecting...", mBluetoothDevice.getName());
-                    mHandler.sendEmptyMessage(0);
                     new Thread(mConnector).start();
                 }
                 break;

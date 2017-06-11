@@ -1,5 +1,7 @@
 package com.maiaga;
 
+import java.util.Date;
+
 /**
  * Created by lukas on 6/9/2017.
  */
@@ -7,12 +9,17 @@ package com.maiaga;
 public class LogItem {
     @Override
     public String toString() {
-        return date + " " + time + "   " +
-                "Lat: " + lat +
-                "Long: " + lng +
-                "Alt: " + alt +
-                "Speed: " + speed;
+        if(validGps)
+            return dateTime + ";" +
+                    lat + ";" +
+                    lng + ";" +
+                    alt + ";" +
+                    spd;
+        else
+            return dateTime + "invalid GPS";
     }
-    double lat, lng, alt, speed;
-    long date, time;
+
+    public double lat, lng, alt, spd;
+    public boolean validGps;
+    public Date dateTime;
 }

@@ -1,0 +1,5 @@
+- [alt, lat, lng] : cista 0 ze zacatku se ignoruje, cista 0 po |cemkoliv| > 5 se ignoruje (radek se vubec nezapise)
+
+- hod:
+-- avg (poslednich 5 - 10) [alt, lat, lng, spd] nez se reklo ze hodil
+-- avg (poslednich 5 - 10) [alt, lat, lng, spd] nez se prohlasilo ze dohodil
