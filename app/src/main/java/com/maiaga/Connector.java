@@ -34,7 +34,7 @@ public class Connector implements Runnable {
                 mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
                 mBluetoothSocket.connect();
                 mProcessor.setStream(mBluetoothSocket.getInputStream());
-                sendMessage("connectorStatus", "connected");
+                sendMessage("connectorState", ConnectorConnectionState.Connected.toString());
             } catch (IOException eConnectException) {
                 try {
                     mBluetoothSocket.close();
@@ -44,7 +44,7 @@ public class Connector implements Runnable {
             }
         }
         if(!isConnected())
-            sendMessage("connectorStatus", "cantConnect");
+            sendMessage("connectorState", ConnectorConnectionState.CantConnect.toString());
     }
 
     public void stop() {

@@ -34,13 +34,15 @@ public class Processor implements Runnable {
     public native double spd();
     public native long date();
     public native long time();
-    public native boolean isValidGps();
+    public native boolean isValidLoc();
+    public native boolean isValidSpd();
+    public native boolean isValidAlt();
     public native boolean newDataAvailable();
 
     @Override
     public void run() {
         mStop = false;
-        mConnectionState = ConnectionState.Connecting;
+        mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
         mThrowState = NoThrow;
         while(!Thread.currentThread().isInterrupted() && !mStop)
         {
@@ -61,7 +63,9 @@ public class Processor implements Runnable {
                     logItem.lng = lng();
                     logItem.alt = alt();
                     logItem.spd = spd();
-                    logItem.validGps = isValidGps();
+                    logItem.validLoc = isValidLoc();
+                    logItem.validSpd = isValidSpd();
+                    logItem.validAlt = isValidAlt();
                     Long currentDate = date();
                     Long currentTime = time();
                     if (currentTime > 10000000) {
@@ -92,35 +96,40 @@ public class Processor implements Runnable {
             catch (IOException ex)
             {
                 mStop = true;
-                if(mConnectionState != ConnectionState.FetchingDataNoDataShouldReconnect) {
-                    mConnectionState = ConnectionState.FetchingDataNoDataShouldReconnect;
-                    sendMessage("processorConnectionState", mConnectionState.toString());
+                if(mProcessorConnectionState != ProcessorConnectionState.FetchingDataNoDataShouldReconnect) {
+                    mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataShouldReconnect;
+                    sendMessage("processorConnectionState", mProcessorConnectionState.toString());
                 }
             }
             finally {
                 boolean isConnectionStateChanged = udpateConnectionStateReturnIfChanged();
-                if(mConnectionState == ConnectionState.FetchingDataGps) {
+                if(mProcessorConnectionState == ProcessorConnectionState.FetchingDataGps) {
                     boolean isThrowStateChanged = udpateThrowStateReturnIfChanged();
                     if (isThrowStateChanged)
                         sendMessage("processorThrowState", mThrowState.toString());
                 }
                 else
                 if(isConnectionStateChanged) {
-                    sendMessage("processorConnectionState", mConnectionState.toString());
+                    sendMessage("processorConnectionState", mProcessorConnectionState.toString());
                 }
             }
         }
     }
 
     private void processLogItem(LogItem logItem) {
-        LogItem previousLogItem = log.get(log.size() - 1);
-        if(previousLogItem.dateTime == logItem.dateTime) {
-            if(previousLogItem.validGps)
-                return;
-            else
-                log.remove(log.size() - 1);
+        boolean addThisItem = true;
+
+        if(!log.isEmpty()) {
+            LogItem previousLogItem = log.get(log.size() - 1);
+            if (previousLogItem.dateTime == logItem.dateTime) {
+                if (previousLogItem.betterOrEquivalentTo(logItem))
+                    addThisItem = false;
+                else
+                    log.remove(log.size() - 1);
+            }
         }
-        else {
+
+        if(addThisItem) {
             log.add(logItem);
             lastLogItem = logItem;
             mLastDataDateTime = new Date();
@@ -133,49 +142,52 @@ public class Processor implements Runnable {
     }
 
     private boolean udpateConnectionStateReturnIfChanged() {
-        if(mLastDataDateTime == null && mConnectionState != ConnectionState.TryingToFetchData) {
-            mConnectionState = ConnectionState.TryingToFetchData;
-            return true;
+        if(mLastDataDateTime == null) {
+            if (mProcessorConnectionState != ProcessorConnectionState.TryingToFetchData) {
+                mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
+                return true;
+            } else
+                return false;
         }
 
         Date now = new Date();
         long lastDataBefore = getDateDiff(mLastDataDateTime, now, TimeUnit.SECONDS);
 
         if(lastDataBefore >= 30) {
-            switch(mConnectionState) {
+            switch(mProcessorConnectionState) {
                 case TryingToFetchData:
                 case FetchingDataGps:
                 case FetchingDataNoGps:
                 case FetchingDataNoDataTemporary:
-                    mConnectionState = ConnectionState.FetchingDataNoDataShouldReconnect;
+                    mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataShouldReconnect;
                     return true;
             }
         }
 
         if(lastDataBefore > 1 && lastDataBefore < 30) {
-            switch(mConnectionState) {
+            switch(mProcessorConnectionState) {
                 case TryingToFetchData:
                 case FetchingDataGps:
                 case FetchingDataNoGps:
-                    mConnectionState = ConnectionState.FetchingDataNoDataTemporary;
+                    mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataTemporary;
                     return true;
             }
         }
-        if(!lastLogItem.validGps) {
-            switch(mConnectionState) {
+        if(!lastLogItem.allValid()) {
+            switch(mProcessorConnectionState) {
                 case TryingToFetchData:
                 case FetchingDataGps:
                 case FetchingDataNoDataTemporary:
-                    mConnectionState = ConnectionState.FetchingDataNoGps;
+                    mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoGps;
                     return true;
             }
         }
 
-         if(mConnectionState != ConnectionState.FetchingDataGps) {
-             mConnectionState = ConnectionState.FetchingDataGps;
-             return true;
-         }
-         return false;
+        if(mProcessorConnectionState != ProcessorConnectionState.FetchingDataGps) {
+            mProcessorConnectionState = ProcessorConnectionState.FetchingDataGps;
+            return true;
+        }
+        return false;
     }
 
     private boolean udpateThrowStateReturnIfChanged() {
@@ -200,7 +212,7 @@ public class Processor implements Runnable {
     public void reset() {
         stop();
         log.clear();
-        mConnectionState = ConnectionState.TryingToFetchData;
+        mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
         mThrowState = NoThrow;
     }
 
@@ -219,7 +231,7 @@ public class Processor implements Runnable {
 
     private ArrayList<LogItem> log;
     private LogItem lastLogItem;
-    private ConnectionState mConnectionState;
+    private ProcessorConnectionState mProcessorConnectionState;
     private ThrowState mThrowState;
     private Handler mHandler;
     private boolean mStop;

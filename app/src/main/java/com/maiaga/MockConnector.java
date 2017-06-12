@@ -3,6 +3,7 @@ package com.maiaga;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,14 +23,16 @@ import java.util.UUID;
 
 public class MockConnector implements Runnable {
 
-    MockConnector(Handler handler, Processor processor) {
+    MockConnector(Handler handler, Processor processor, Context context) {
         mHandler = handler;
         mProcessor = processor;
         try {
-            File myFile = new File("data.txt");
+            String filePath = context.getFilesDir().getPath() + "/data.txt";
+            File myFile = new File(filePath);
+            myFile.delete();
             myFile.createNewFile();
-            mFileInputStream = new FileInputStream("data.txt");
-            mFileOutputStream = new FileOutputStream("data.txt", true);
+            mFileInputStream = new FileInputStream(filePath);
+            mFileOutputStream = new FileOutputStream(filePath, true);
         }
         catch(FileNotFoundException e) {
 
@@ -41,11 +44,13 @@ public class MockConnector implements Runnable {
     @Override
     public void run() {
         mProcessor.setStream(mFileInputStream);
-        sendMessage("connectorStatus", "connected");
+        sendMessage("connectorState", ConnectorConnectionState.Connected.toString());
 
         new Thread(new Runnable() {
             public void run() {
-                String s = "$GPRMC,235316.000,A,4003.9040,N,10512.5792,W,0.09,144.75,141112,,*19\n";
+                String s = "$GPRMC,235316.000,A,4003.9040,N,10512.5792,W,0.09,144.75,141112,,*19\n" +
+                        "$GPGGA,235317.000,4003.9039,N,10512.5793,W,1,08,1.6,1577.9,M,-20.7,M,,0000*5F\n" +
+                        "$GPGSA,A,3,22,18,21,06,03,09,24,15,,,,,2.5,1.6,1.9*3E\n";
                 try {
                     mFileOutputStream.write(s.getBytes());
                     Thread.sleep(500);
@@ -57,7 +62,7 @@ public class MockConnector implements Runnable {
             }
         }).start();
 
-        //sendMessage("connectorStatus", "cantConnect");
+        //sendMessage("connectorState", "cantConnect");
     }
 
     public void stop() {

@@ -14,7 +14,10 @@ public class MockDeviceListActivity extends AppCompatActivity {
     protected void onCreate(Bundle mSavedInstanceState)
     {
         super.onCreate(mSavedInstanceState);
+        Bundle mBundle = new Bundle();
+        mBundle.putString("DeviceAddress", "123");
         Intent mBackIntent = new Intent();
+        mBackIntent.putExtras(mBundle);
         setResult(Activity.RESULT_OK, mBackIntent);
         finish();
     }

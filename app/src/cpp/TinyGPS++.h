@@ -286,8 +286,18 @@ Java_com_maiaga_Processor_time(JNIEnv *env, jobject instance) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_maiaga_Processor_isValidGps(JNIEnv *env, jobject instance) {
-    return tinyGPSPlus.location.isValid() && tinyGPSPlus.speed.isValid() && tinyGPSPlus.altitude.isValid();
+Java_com_maiaga_Processor_isValidLoc(JNIEnv *env, jobject instance) {
+    return tinyGPSPlus.location.isValid();
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_maiaga_Processor_isValidSpd(JNIEnv *env, jobject instance) {
+    return tinyGPSPlus.speed.isValid();
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_maiaga_Processor_isValidAlt(JNIEnv *env, jobject instance) {
+    return tinyGPSPlus.altitude.isValid();
 }
 
 JNIEXPORT jboolean JNICALL

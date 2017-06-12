@@ -1,8 +1,6 @@
 package com.maiaga;
 
 import android.app.ProgressDialog;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
@@ -11,8 +9,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.maiaga.R;
 
 public class MainActivity extends AppCompatActivity {
     private static final int requestDeviceConnect = 1;
@@ -31,9 +27,24 @@ public class MainActivity extends AppCompatActivity {
                     String data = bundle.getString("data", "_");
                     mStatusTextView.setText(data);
                     break;
+                case "connectorState":
+                    ConnectorConnectionState connectorConnectionState = ConnectorConnectionState.valueOf(bundle.getString("data"));
+                    switch(connectorConnectionState) {
+                        case Connecting:
+                            showOkProgress("Connecting...");
+                            break;
+                        case Connected:
+                            showOkStatus("Connected");
+                            new Thread(mProcessor).start();
+                            break;
+                        case CantConnect:
+                            showErrorStatus("Bad bluetooth signal, get closer to the MAIAGA device...");
+                            break;
+                    }
+                    break;
                 case "processorConnectionState":
-                    ConnectionState connectionState = ConnectionState.valueOf(bundle.getString("data"));
-                    switch(connectionState) {
+                    ProcessorConnectionState processorConnectionState = ProcessorConnectionState.valueOf(bundle.getString("data"));
+                    switch(processorConnectionState) {
                         case TryingToFetchData:
                             showOkProgress("Initializing...");
                             break;
@@ -48,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
                             new Thread(mConnector).start();
                             break;
                     }
+                    break;
                 case "processorThrowState":
                     ThrowState throwState = ThrowState.valueOf(bundle.getString("data"));
                     switch(throwState) {
@@ -72,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
 
         mProcessor = new Processor(mHandler);
-        mConnector = new MockConnector(mHandler, mProcessor);
+        mConnector = new MockConnector(mHandler, mProcessor, this);
 
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
@@ -100,7 +112,6 @@ public class MainActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK)
                 {
                     String deviceName = mConnector.setDeviceReturnName(data.getExtras().getString("DeviceAddress"));
-                    showOkProgress("Connecting...", deviceName);
                     new Thread(mConnector).start();
                 }
                 break;
