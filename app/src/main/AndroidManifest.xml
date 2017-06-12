@@ -25,6 +25,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.maiaga.MainActivity" />
         </activity>
+        <activity
+            android:name="com.maiaga.MockDeviceListActivity"
+            android:parentActivityName="com.maiaga.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.maiaga.MainActivity" />
+        </activity>
         <activity android:name="com.maiaga.DisplayResultActivity"></activity>
     </application>
 

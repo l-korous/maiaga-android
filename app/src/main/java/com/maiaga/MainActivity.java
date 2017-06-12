@@ -14,21 +14,9 @@ import android.widget.Toast;
 
 import com.maiaga.R;
 
-import java.io.InputStream;
-
 public class MainActivity extends AppCompatActivity {
     private static final int requestDeviceConnect = 1;
     private static final int requestBluetooth = 2;
-
-    private TextView mStatusTextView;
-    private TextView mErrorTextView;
-    private ProgressDialog mProgressDialog;
-
-    private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothDevice mBluetoothDevice;
-
-    private Processor mProcessor;
-    private Connector mConnector;
 
     private Handler mHandler = new Handler()
     {
@@ -82,10 +70,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         mProcessor = new Processor(mHandler);
-        mConnector = new Connector(mHandler, mProcessor, mBluetoothAdapter);
+        mConnector = new MockConnector(mHandler, mProcessor);
 
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
@@ -93,37 +80,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void buttonClick(View view) {
-
-        if (mBluetoothAdapter == null) {
+        if(!mConnector.isBluetoothAvailable()) {
             showErrorStatus(getResources().getText(R.string.no_bt).toString());
         }
         else {
-            if (!mBluetoothAdapter.isEnabled()) {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            if (!mConnector.isBluetoothEnabled()) {
+                Intent enableBtIntent = mConnector.createBluetoothEnableIntent();
                 startActivityForResult(enableBtIntent, requestBluetooth);
             } else {
-                Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
+                Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
                 startActivityForResult(connectIntent, requestDeviceConnect);
             }
         }
     }
 
     public void onActivityResult (int requestCode, int resultCode, Intent data) {
-        switch (requestCode)
-        {
+        switch (requestCode) {
             case requestDeviceConnect:
                 if (resultCode == RESULT_OK)
                 {
-                    mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(data.getExtras().getString("DeviceAddress"));
-                    mConnector.setDevice(mBluetoothDevice);
-                    showOkProgress("Connecting...", mBluetoothDevice.getName());
+                    String deviceName = mConnector.setDeviceReturnName(data.getExtras().getString("DeviceAddress"));
+                    showOkProgress("Connecting...", deviceName);
                     new Thread(mConnector).start();
                 }
                 break;
 
             case requestBluetooth:
                 if(resultCode == RESULT_OK) {
-                    mBluetoothAdapter.cancelDiscovery();
                     Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
                     startActivityForResult(connectIntent, requestDeviceConnect);
                 }
@@ -163,4 +146,11 @@ public class MainActivity extends AppCompatActivity {
         if(mProgressDialog != null)
             mProgressDialog.dismiss();
     }
+
+    private TextView mStatusTextView;
+    private TextView mErrorTextView;
+    private ProgressDialog mProgressDialog;
+
+    private Processor mProcessor;
+    private MockConnector mConnector;
 }

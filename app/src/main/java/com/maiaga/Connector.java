@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -15,12 +16,12 @@ public class Connector implements Runnable {
     public static final UUID applicationUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final int mmaxConnectionAttempts = 10;
 
-    Connector(Handler handler, Processor processor, BluetoothAdapter bluetoothAdapter) {
+    Connector(Handler handler, Processor processor) {
         mHandler = handler;
         mStop = false;
         mConnected = false;
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         mProcessor = processor;
-        mBluetoothAdapter = bluetoothAdapter;
     }
 
     @Override
@@ -50,8 +51,21 @@ public class Connector implements Runnable {
         mStop = true;
     }
 
-    public void setDevice(BluetoothDevice bluetoothDevice) {
-        mBluetoothDevice = bluetoothDevice;
+    public String setDeviceReturnName(String deviceAddress) {
+        mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(deviceAddress);
+        return mBluetoothDevice.getName();
+    }
+
+    public boolean isBluetoothAvailable() {
+        return mBluetoothAdapter != null;
+    }
+
+    public boolean isBluetoothEnabled() {
+        return mBluetoothAdapter.isEnabled();
+    }
+
+    public Intent createBluetoothEnableIntent() {
+        return new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
     }
 
     private boolean isConnected() {
