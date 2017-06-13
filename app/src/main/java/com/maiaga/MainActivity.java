@@ -6,13 +6,58 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
     private static final int requestDeviceConnect = 1;
     private static final int requestBluetooth = 2;
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        if(mConnector.isConnected()) {
+            menu.findItem(R.id.connect).setVisible(false);
+            menu.findItem(R.id.disconnect).setVisible(true);
+        }
+        else {
+            menu.findItem(R.id.connect).setVisible(true);
+            menu.findItem(R.id.disconnect).setVisible(false);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.top_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.connect:
+                connect();
+                return true;
+            case R.id.disconnect:
+                mProcessor.stop();
+                mConnector.stop();
+                showOkStatus("Disconnected");
+                updateConnectionState();
+                return true;
+            case R.id.results:
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 
     private Handler mHandler = new Handler()
     {
@@ -22,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
             Bundle bundle = msg.getData();
             String key = bundle.getString("key", "_");
 
+            Log.i("STATUS", "Key: " + key);
             switch(key) {
                 case "processorData":
                     String data = bundle.getString("data", "_");
@@ -31,14 +77,16 @@ public class MainActivity extends AppCompatActivity {
                     ConnectorConnectionState connectorConnectionState = ConnectorConnectionState.valueOf(bundle.getString("data"));
                     switch(connectorConnectionState) {
                         case Connecting:
-                            showOkProgress("Connecting...");
+                            showOkStatus("Connecting...");
                             break;
                         case Connected:
                             showOkStatus("Connected");
+                            updateConnectionState();
                             new Thread(mProcessor).start();
                             break;
                         case CantConnect:
                             showErrorStatus("Bad bluetooth signal, get closer to the MAIAGA device...");
+                            updateConnectionState();
                             break;
                     }
                     break;
@@ -48,13 +96,17 @@ public class MainActivity extends AppCompatActivity {
                         case TryingToFetchData:
                             showOkProgress("Initializing...");
                             break;
+                        case FetchingDataGps:
+                            clearStatuses();
+                            break;
                         case FetchingDataNoGps:
-                            showOkProgress("Connected, waiting GPS data...");
+                            showOkProgress("Connected, waiting for GPS data...");
                             break;
                         case FetchingDataNoDataTemporary:
                             showOkProgress("Bad bluetooth signal, get closer to MAIAGA device...");
                             break;
                         case FetchingDataNoDataShouldReconnect:
+                            updateConnectionState();
                             showOkProgress("Reconnecting...");
                             new Thread(mConnector).start();
                             break;
@@ -91,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
         mErrorTextView = (TextView) findViewById(R.id.errorTextView);
     }
 
-    public void buttonClick(View view) {
+    private void connect() {
         if(!mConnector.isBluetoothAvailable()) {
             showErrorStatus(getResources().getText(R.string.no_bt).toString());
         }
@@ -104,6 +156,10 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(connectIntent, requestDeviceConnect);
             }
         }
+    }
+
+    public void buttonClick(View view) {
+        connect();
     }
 
     public void onActivityResult (int requestCode, int resultCode, Intent data) {
@@ -156,6 +212,14 @@ public class MainActivity extends AppCompatActivity {
     private void hideProgress() {
         if(mProgressDialog != null)
             mProgressDialog.dismiss();
+    }
+
+    private void updateConnectionState() {
+        invalidateOptionsMenu();
+        if(mConnector.isConnected())
+            findViewById(R.id.button).setVisibility(View.GONE);
+        else
+            findViewById(R.id.button).setVisibility(View.VISIBLE);
     }
 
     private TextView mStatusTextView;

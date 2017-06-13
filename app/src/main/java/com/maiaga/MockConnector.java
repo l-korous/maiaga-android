@@ -10,9 +10,9 @@ import android.os.Handler;
 import android.os.Message;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.PipedInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.PipedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -25,14 +25,15 @@ public class MockConnector implements Runnable {
 
     MockConnector(Handler handler, Processor processor, Context context) {
         mHandler = handler;
+        mStop = true;
         mProcessor = processor;
         try {
             String filePath = context.getFilesDir().getPath() + "/data.txt";
             File myFile = new File(filePath);
             myFile.delete();
             myFile.createNewFile();
-            mFileInputStream = new FileInputStream(filePath);
-            mFileOutputStream = new FileOutputStream(filePath, true);
+            mPipedOutputStream = new PipedOutputStream();
+            mPipedInputStream = new PipedInputStream(mPipedOutputStream);
         }
         catch(FileNotFoundException e) {
 
@@ -43,21 +44,24 @@ public class MockConnector implements Runnable {
 
     @Override
     public void run() {
-        mProcessor.setStream(mFileInputStream);
+        mStop = false;
+        mProcessor.setStream(mPipedInputStream);
         sendMessage("connectorState", ConnectorConnectionState.Connected.toString());
 
         new Thread(new Runnable() {
             public void run() {
-                String s = "$GPRMC,235316.000,A,4003.9040,N,10512.5792,W,0.09,144.75,141112,,*19\n" +
-                        "$GPGGA,235317.000,4003.9039,N,10512.5793,W,1,08,1.6,1577.9,M,-20.7,M,,0000*5F\n" +
-                        "$GPGSA,A,3,22,18,21,06,03,09,24,15,,,,,2.5,1.6,1.9*3E\n";
-                try {
-                    mFileOutputStream.write(s.getBytes());
-                    Thread.sleep(500);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                int timeInt = 235316;
+                while (!Thread.currentThread().isInterrupted() && !mStop) {
+                    String s = "$GPRMC," + Integer.toString(timeInt) + ".000,A,4003.9040,N,10512.5792,W,0.09,144.75,141112,,*19\n" +
+                            "$GPGGA," + Integer.toString(timeInt++ + 1) + ".000,4003.9039,N,10512.5793,W,1,08,1.6,1577.9,M,-20.7,M,,0000*5F\n";
+                    try {
+                        mPipedOutputStream.write(s.getBytes());
+                        Thread.sleep(250);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }).start();
@@ -66,6 +70,7 @@ public class MockConnector implements Runnable {
     }
 
     public void stop() {
+        mStop = true;
     }
 
     public String setDeviceReturnName(String deviceAddress) {
@@ -84,8 +89,8 @@ public class MockConnector implements Runnable {
         return new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
     }
 
-    private boolean isConnected() {
-        return true;
+    public boolean isConnected() {
+        return !mStop;
     }
 
     private boolean shouldStopConnecting() {
@@ -102,7 +107,8 @@ public class MockConnector implements Runnable {
     }
 
     private Handler mHandler;
+    private boolean mStop;
     private Processor mProcessor;
-    private FileInputStream mFileInputStream;
-    private FileOutputStream mFileOutputStream;
+    private PipedInputStream mPipedInputStream;
+    private PipedOutputStream mPipedOutputStream;
 }

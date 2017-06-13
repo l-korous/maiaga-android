@@ -68,7 +68,7 @@ public class Connector implements Runnable {
         return new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
     }
 
-    private boolean isConnected() {
+    public boolean isConnected() {
         if(mBluetoothSocket != null)
             return mBluetoothSocket.isConnected();
         else

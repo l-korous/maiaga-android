@@ -96,6 +96,11 @@ public class Processor implements Runnable {
             catch (IOException ex)
             {
                 mStop = true;
+                try {
+                    mInStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 if(mProcessorConnectionState != ProcessorConnectionState.FetchingDataNoDataShouldReconnect) {
                     mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataShouldReconnect;
                     sendMessage("processorConnectionState", mProcessorConnectionState.toString());
@@ -103,16 +108,20 @@ public class Processor implements Runnable {
             }
             finally {
                 boolean isConnectionStateChanged = udpateConnectionStateReturnIfChanged();
+                if(isConnectionStateChanged) {
+                    sendMessage("processorConnectionState", mProcessorConnectionState.toString());
+                }
                 if(mProcessorConnectionState == ProcessorConnectionState.FetchingDataGps) {
                     boolean isThrowStateChanged = udpateThrowStateReturnIfChanged();
                     if (isThrowStateChanged)
                         sendMessage("processorThrowState", mThrowState.toString());
                 }
-                else
-                if(isConnectionStateChanged) {
-                    sendMessage("processorConnectionState", mProcessorConnectionState.toString());
-                }
             }
+        }
+        try {
+            mInStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -132,8 +141,8 @@ public class Processor implements Runnable {
         if(addThisItem) {
             log.add(logItem);
             lastLogItem = logItem;
-            mLastDataDateTime = new Date();
         }
+        mLastDataDateTime = new Date();
     }
 
     private static long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
@@ -161,25 +170,34 @@ public class Processor implements Runnable {
                 case FetchingDataNoDataTemporary:
                     mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataShouldReconnect;
                     return true;
+                case FetchingDataNoDataShouldReconnect:
+                    return false;
             }
         }
 
-        if(lastDataBefore > 1 && lastDataBefore < 30) {
+        if(lastDataBefore > 2 && lastDataBefore < 30) {
             switch(mProcessorConnectionState) {
                 case TryingToFetchData:
                 case FetchingDataGps:
                 case FetchingDataNoGps:
+                case FetchingDataNoDataShouldReconnect:
                     mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataTemporary;
                     return true;
+                case FetchingDataNoDataTemporary:
+                    return false;
             }
         }
         if(!lastLogItem.allValid()) {
             switch(mProcessorConnectionState) {
                 case TryingToFetchData:
+                    if(log.size() < 5)
+                        return false;
                 case FetchingDataGps:
                 case FetchingDataNoDataTemporary:
                     mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoGps;
                     return true;
+                case FetchingDataNoGps:
+                    return false;
             }
         }
 
@@ -191,14 +209,12 @@ public class Processor implements Runnable {
     }
 
     private boolean udpateThrowStateReturnIfChanged() {
-        if(mThrowState == NoThrow) {
-            boolean isMoving = lastLogItem.spd > 3;
+        if(mThrowState == NoThrow && lastLogItem.spd > 3) {
             mThrowState = InThrow;
             return true;
         }
 
-        if(mThrowState == InThrow) {
-            boolean isMoving = lastLogItem.spd < 1;
+        if(mThrowState == InThrow && lastLogItem.spd < 1) {
             mThrowState = AfterThrow;
             return true;
         }

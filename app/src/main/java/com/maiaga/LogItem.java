@@ -9,18 +9,18 @@ import java.util.Date;
 public class LogItem {
     @Override
     public String toString() {
-        return dateTime + ", loc:" +
-                (validLoc ? lat + "," + lng : "(invalid)") + ", alt:" +
-                (validAlt ? alt : "(invalid)") + ", spd:" +
-                (validSpd ? spd : "(invalid)");
+        return dateTime.toString() + ", loc:" +
+                (validLoc ? Double.toString(lat) + "," + Double.toString(lng) : "(invalid)") + ", alt:" +
+                (validAlt ? Double.toString(alt) : "(invalid)") + ", spd:" +
+                (validSpd ? Double.toString(spd) : "(invalid)");
     }
 
     public String toCsvRow() {
-        return dateTime + ";" +
-                lat + ";" +
-                lng + ";" +
-                alt + ";" +
-                spd;
+        return dateTime.toString() + ";" +
+                Double.toString(lat) + ";" +
+                Double.toString(lng) + ";" +
+                Double.toString(alt) + ";" +
+                Double.toString(spd);
     }
 
     public boolean betterOrEquivalentTo(LogItem other) {
