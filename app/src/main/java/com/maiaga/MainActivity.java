@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
                 connect();
                 return true;
             case R.id.disconnect:
-                mProcessor.stop();
+                mProcessor.reset();
                 mConnector.stop();
                 showOkStatus("Disconnected");
                 updateConnectionState();
@@ -57,6 +57,11 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+
     }
 
     private Handler mHandler = new Handler()
@@ -77,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                     ConnectorConnectionState connectorConnectionState = ConnectorConnectionState.valueOf(bundle.getString("data"));
                     switch(connectorConnectionState) {
                         case Connecting:
-                            showOkStatus("Connecting...");
+                            showOkProgress("Connecting...");
                             break;
                         case Connected:
                             showOkStatus("Connected");
@@ -136,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
         Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
 
         mProcessor = new Processor(mHandler);
-        mConnector = new MockConnector(mHandler, mProcessor, this);
+        mConnector = new Connector(mHandler, mProcessor, this);
 
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
@@ -152,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent enableBtIntent = mConnector.createBluetoothEnableIntent();
                 startActivityForResult(enableBtIntent, requestBluetooth);
             } else {
-                Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
+                Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
                 startActivityForResult(connectIntent, requestDeviceConnect);
             }
         }
@@ -227,5 +232,5 @@ public class MainActivity extends AppCompatActivity {
     private ProgressDialog mProgressDialog;
 
     private Processor mProcessor;
-    private MockConnector mConnector;
+    private Connector mConnector;
 }

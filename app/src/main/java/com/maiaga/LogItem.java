@@ -9,14 +9,14 @@ import java.util.Date;
 public class LogItem {
     @Override
     public String toString() {
-        return dateTime.toString() + ", loc:" +
+        return (dateTime == null ? "(invalid dateTime)" : dateTime).toString() + ", loc:" +
                 (validLoc ? Double.toString(lat) + "," + Double.toString(lng) : "(invalid)") + ", alt:" +
                 (validAlt ? Double.toString(alt) : "(invalid)") + ", spd:" +
                 (validSpd ? Double.toString(spd) : "(invalid)");
     }
 
     public String toCsvRow() {
-        return dateTime.toString() + ";" +
+        return (dateTime == null ? "(invalid dateTime)" : dateTime).toString() + ";" +
                 Double.toString(lat) + ";" +
                 Double.toString(lng) + ";" +
                 Double.toString(alt) + ";" +

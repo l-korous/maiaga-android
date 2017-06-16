@@ -301,6 +301,11 @@ Java_com_maiaga_Processor_isValidAlt(JNIEnv *env, jobject instance) {
 }
 
 JNIEXPORT jboolean JNICALL
+Java_com_maiaga_Processor_isValidDateTime(JNIEnv *env, jobject instance) {
+    return tinyGPSPlus.date.isValid() && tinyGPSPlus.time.isValid();
+}
+
+JNIEXPORT jboolean JNICALL
 Java_com_maiaga_Processor_newDataAvailable(JNIEnv *env, jobject instance) {
     return tinyGPSPlus.time.isUpdated();
 }

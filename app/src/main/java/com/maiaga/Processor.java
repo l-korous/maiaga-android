@@ -37,6 +37,7 @@ public class Processor implements Runnable {
     public native boolean isValidLoc();
     public native boolean isValidSpd();
     public native boolean isValidAlt();
+    public native boolean isValidDateTime();
     public native boolean newDataAvailable();
 
     @Override
@@ -68,22 +69,21 @@ public class Processor implements Runnable {
                     logItem.validAlt = isValidAlt();
                     Long currentDate = date();
                     Long currentTime = time();
-                    if (currentTime > 10000000) {
-                        try {
-                            DateFormat df = new SimpleDateFormat("ddMMyyHHmmss");
-                            logItem.dateTime = df.parse(Long.toString(currentDate) + (Long.toString(currentTime / 100)));
-                        }
-                        catch (ParseException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    else {
-                        try {
-                            DateFormat df = new SimpleDateFormat("ddMMyyHmmss");
-                            logItem.dateTime = df.parse(Long.toString(currentDate) + (Long.toString(currentTime / 100)));
-                        }
-                        catch (ParseException e) {
-                            e.printStackTrace();
+                    if(isValidDateTime()) {
+                        if (currentTime > 10000000) {
+                            try {
+                                DateFormat df = new SimpleDateFormat("ddMMyyHHmmss");
+                                logItem.dateTime = df.parse(Long.toString(currentDate) + (Long.toString(currentTime / 100)));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            try {
+                                DateFormat df = new SimpleDateFormat("ddMMyyHmmss");
+                                logItem.dateTime = df.parse(Long.toString(currentDate) + (Long.toString(currentTime / 100)));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
 
@@ -175,7 +175,7 @@ public class Processor implements Runnable {
             }
         }
 
-        if(lastDataBefore > 2 && lastDataBefore < 30) {
+        if(lastDataBefore > 3 && lastDataBefore < 30) {
             switch(mProcessorConnectionState) {
                 case TryingToFetchData:
                 case FetchingDataGps:
