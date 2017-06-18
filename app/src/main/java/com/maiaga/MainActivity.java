@@ -12,12 +12,34 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import pl.droidsonroids.gif.GifTextView;
 
 public class MainActivity extends AppCompatActivity {
     private static final int requestDeviceConnect = 1;
     private static final int requestBluetooth = 2;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
+
+        mProcessor = new Processor(mHandler);
+        mConnector = new MockConnector(mHandler, mProcessor, this);
+
+        setContentView(R.layout.activity_main);
+        mStatusTextView = (TextView) findViewById(R.id.statusTextView);
+        mErrorTextView = (TextView) findViewById(R.id.errorTextView);
+        mGifView = (GifTextView) findViewById(R.id.gifView);
+        mPngView = (ImageView) findViewById(R.id.pngView);
+
+        mGifView.setVisibility(View.VISIBLE);
+        mPngView.setVisibility(View.INVISIBLE);
+        mGifView.setBackgroundResource(R.drawable.in_throw);
+    }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
@@ -47,10 +69,7 @@ public class MainActivity extends AppCompatActivity {
                 connect();
                 return true;
             case R.id.disconnect:
-                mProcessor.reset();
-                mConnector.stop();
-                showOkStatus("Disconnected");
-                updateConnectionState();
+                disconnect();
                 return true;
             case R.id.results:
                 return true;
@@ -59,9 +78,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void disconnect() {
+        mProcessor.reset();
+        mConnector.stop();
+        showOkStatus("Disconnected");
+        updateConnectionState();
+    }
+
     @Override
     public void onBackPressed() {
-
+        if(mCurrentConnectorConnectionState == ConnectorConnectionState.Connecting)
+            disconnect();
     }
 
     private Handler mHandler = new Handler()
@@ -80,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case "connectorState":
                     ConnectorConnectionState connectorConnectionState = ConnectorConnectionState.valueOf(bundle.getString("data"));
+                    mCurrentConnectorConnectionState = connectorConnectionState;
                     switch(connectorConnectionState) {
                         case Connecting:
                             showOkProgress("Connecting...");
@@ -97,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case "processorConnectionState":
                     ProcessorConnectionState processorConnectionState = ProcessorConnectionState.valueOf(bundle.getString("data"));
+                    mCurrentProcessorConnectionState = processorConnectionState;
                     switch(processorConnectionState) {
                         case TryingToFetchData:
                             showOkProgress("Initializing...");
@@ -135,19 +164,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
-
-        mProcessor = new Processor(mHandler);
-        mConnector = new Connector(mHandler, mProcessor, this);
-
-        setContentView(R.layout.activity_main);
-        mStatusTextView = (TextView) findViewById(R.id.statusTextView);
-        mErrorTextView = (TextView) findViewById(R.id.errorTextView);
-    }
-
     private void connect() {
         if(!mConnector.isBluetoothAvailable()) {
             showErrorStatus(getResources().getText(R.string.no_bt).toString());
@@ -157,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent enableBtIntent = mConnector.createBluetoothEnableIntent();
                 startActivityForResult(enableBtIntent, requestBluetooth);
             } else {
-                Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
+                Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
                 startActivityForResult(connectIntent, requestDeviceConnect);
             }
         }
@@ -179,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
 
             case requestBluetooth:
                 if(resultCode == RESULT_OK) {
-                    Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
+                    Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
                     startActivityForResult(connectIntent, requestDeviceConnect);
                 }
                 else {
@@ -229,8 +245,11 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView mStatusTextView;
     private TextView mErrorTextView;
+    private GifTextView mGifView;
+    private ImageView mPngView;
     private ProgressDialog mProgressDialog;
-
+    private ConnectorConnectionState mCurrentConnectorConnectionState;
+    private ProcessorConnectionState mCurrentProcessorConnectionState;
     private Processor mProcessor;
-    private Connector mConnector;
+    private MockConnector mConnector;
 }

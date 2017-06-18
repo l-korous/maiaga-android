@@ -20,7 +20,6 @@ public class Connector implements Runnable {
     Connector(Handler handler, Processor processor, Context context) {
         mHandler = handler;
         mStop = false;
-        mConnected = false;
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         mProcessor = processor;
     }
