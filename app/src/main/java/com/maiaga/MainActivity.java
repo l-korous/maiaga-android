@@ -32,11 +32,10 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
-        mErrorTextView = (TextView) findViewById(R.id.errorTextView);
         mGifView = (GifTextView) findViewById(R.id.gifView);
         mPngView = (ImageView) findViewById(R.id.pngView);
 
-        mGifView.setVisibility(View.VISIBLE);
+        mGifView.setVisibility(View.INVISIBLE);
         mPngView.setVisibility(View.INVISIBLE);
         mGifView.setBackgroundResource(R.drawable.in_throw);
     }
@@ -81,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
     private void disconnect() {
         mProcessor.reset();
         mConnector.stop();
-        showOkStatus("Disconnected");
+        showOkToast("Disconnected");
         updateConnectionState();
     }
 
@@ -107,66 +106,110 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case "connectorState":
                     ConnectorConnectionState connectorConnectionState = ConnectorConnectionState.valueOf(bundle.getString("data"));
-                    mCurrentConnectorConnectionState = connectorConnectionState;
-                    switch(connectorConnectionState) {
-                        case Connecting:
-                            showOkProgress("Connecting...");
-                            break;
-                        case Connected:
-                            showOkStatus("Connected");
-                            updateConnectionState();
-                            new Thread(mProcessor).start();
-                            break;
-                        case CantConnect:
-                            showErrorStatus("Bad bluetooth signal, get closer to the MAIAGA device...");
-                            updateConnectionState();
-                            break;
-                    }
+                    setCurrentConnectorConnectionState(connectorConnectionState);
                     break;
                 case "processorConnectionState":
                     ProcessorConnectionState processorConnectionState = ProcessorConnectionState.valueOf(bundle.getString("data"));
-                    mCurrentProcessorConnectionState = processorConnectionState;
-                    switch(processorConnectionState) {
-                        case TryingToFetchData:
-                            showOkProgress("Initializing...");
-                            break;
-                        case FetchingDataGps:
-                            clearStatuses();
-                            break;
-                        case FetchingDataNoGps:
-                            showOkProgress("Connected, waiting for GPS data...");
-                            break;
-                        case FetchingDataNoDataTemporary:
-                            showOkProgress("Bad bluetooth signal, get closer to MAIAGA device...");
-                            break;
-                        case FetchingDataNoDataShouldReconnect:
-                            updateConnectionState();
-                            showOkProgress("Reconnecting...");
-                            new Thread(mConnector).start();
-                            break;
-                    }
+                    setCurrentProcessorConnectionState(processorConnectionState);
                     break;
                 case "processorThrowState":
                     ThrowState throwState = ThrowState.valueOf(bundle.getString("data"));
-                    switch(throwState) {
-                        case NoThrow:
-                            // Tohle je blby, to se nema stavat, na NoThrow se dostane Processor tak, ze by nemel poslat zpravu (pri inicializaci runu)
-                            break;
-                        case InThrow:
-                            showOkProgress("Flying...");
-                        case AfterThrow:
-                            mProcessor.reset();
-                            showOkStatus("Cooool");
-                            break;
-                    }
+                    setCurrentThrowState(throwState);
                     break;
             }
         }
     };
 
+    private void setCurrentConnectorConnectionState(ConnectorConnectionState connectorConnectionState) {
+        mCurrentConnectorConnectionState = connectorConnectionState;
+
+        switch (mCurrentConnectorConnectionState) {
+            case Connecting:
+                mGifView.setVisibility(View.VISIBLE);
+                mPngView.setVisibility(View.INVISIBLE);
+                mGifView.setBackgroundResource(R.drawable.connecting);
+                showStatus("Bad bluetooth signal, get closer to the MAIAGA device...");
+                break;
+            case Connected:
+                showOkToast("Connected");
+                mGifView.setVisibility(View.INVISIBLE);
+                mPngView.setVisibility(View.INVISIBLE);
+                updateConnectionState();
+                new Thread(mProcessor).start();
+                break;
+            case CantConnect:
+                showStatus("Bad bluetooth signal, get closer to the MAIAGA device...");
+                mGifView.setVisibility(View.INVISIBLE);
+                mPngView.setVisibility(View.INVISIBLE);
+                mGifView.setBackgroundResource(R.drawable.disconnected);
+                updateConnectionState();
+                break;
+        }
+    }
+
+    private void setCurrentProcessorConnectionState(ProcessorConnectionState processorConnectionState) {
+        mCurrentProcessorConnectionState = processorConnectionState;
+
+        switch(mCurrentProcessorConnectionState) {
+            case TryingToFetchData:
+                mGifView.setVisibility(View.VISIBLE);
+                mPngView.setVisibility(View.INVISIBLE);
+                mGifView.setBackgroundResource(R.drawable.trying_to_fetch_fata);
+                showStatus("Trying to fetch data...");
+                break;
+            case FetchingDataGps:
+                mGifView.setVisibility(View.INVISIBLE);
+                mPngView.setVisibility(View.VISIBLE);
+                mGifView.setBackgroundResource(R.drawable.fetching_data_gps);
+                showStatus("Waiting for throw...");
+                break;
+            case FetchingDataNoGps:
+                mGifView.setVisibility(View.INVISIBLE);
+                mPngView.setVisibility(View.VISIBLE);
+                mGifView.setBackgroundResource(R.drawable.fetching_data_no_data_temporary);
+                showStatus("Waiting for GPS data...");
+                break;
+            case FetchingDataNoDataTemporary:
+                mGifView.setVisibility(View.INVISIBLE);
+                mPngView.setVisibility(View.VISIBLE);
+                mGifView.setBackgroundResource(R.drawable.fetching_data_no_data_temporary);
+                showStatus("Bad bluetooth signal, get closer to MAIAGA device...");
+                break;
+            case FetchingDataNoDataShouldReconnect:
+                updateConnectionState();
+                mGifView.setVisibility(View.VISIBLE);
+                mPngView.setVisibility(View.INVISIBLE);
+                mGifView.setBackgroundResource(R.drawable.connecting);
+                showStatus("Bad bluetooth signal, get closer to the MAIAGA device...");
+                new Thread(mConnector).start();
+                break;
+        }
+    }
+
+    private void setCurrentThrowState(ThrowState throwState) {
+        mCurrentThrowState = throwState;
+        switch(throwState) {
+            case NoThrow:
+                mGifView.setVisibility(View.INVISIBLE);
+                mPngView.setVisibility(View.VISIBLE);
+                mGifView.setBackgroundResource(R.drawable.no_throw);
+                showStatus("Waiting for a throw...");
+                break;
+            case InThrow:
+                mGifView.setVisibility(View.VISIBLE);
+                mPngView.setVisibility(View.INVISIBLE);
+                mGifView.setBackgroundResource(R.drawable.in_throw);
+                showStatus("Flying...");
+            case AfterThrow:
+                mProcessor.reset();
+                showOkToast("Cooool");
+                break;
+        }
+    }
+
     private void connect() {
         if(!mConnector.isBluetoothAvailable()) {
-            showErrorStatus(getResources().getText(R.string.no_bt).toString());
+            showStatus(getResources().getText(R.string.no_bt).toString());
         }
         else {
             if (!mConnector.isBluetoothEnabled()) {
@@ -199,40 +242,18 @@ public class MainActivity extends AppCompatActivity {
                     startActivityForResult(connectIntent, requestDeviceConnect);
                 }
                 else {
-                    showErrorStatus(getResources().getText(R.string.denied_bt).toString());
+                    showStatus(getResources().getText(R.string.denied_bt).toString());
                 }
                 break;
         }
     }
 
-    private void showOkProgress(String status) {
-        clearStatuses();
-        mProgressDialog = ProgressDialog.show(this, status, "", true, false);
-    }
-
-    private void showOkProgress(String status, String detail) {
-        clearStatuses();
-        mProgressDialog = ProgressDialog.show(this, status, detail, true, false);
-    }
-
-    private void showOkStatus(String status) {
-        clearStatuses();
+    private void showOkToast(String status) {
         Toast.makeText(MainActivity.this, status, Toast.LENGTH_LONG).show();
     }
 
-    private void showErrorStatus(String status) {
-        clearStatuses();
-        mErrorTextView.setText(status);
-    }
-
-    private void clearStatuses() {
-        mErrorTextView.setText("");
-        hideProgress();
-    }
-
-    private void hideProgress() {
-        if(mProgressDialog != null)
-            mProgressDialog.dismiss();
+    private void showStatus(String status) {
+        mStatusTextView.setText(status);
     }
 
     private void updateConnectionState() {
@@ -244,12 +265,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private TextView mStatusTextView;
-    private TextView mErrorTextView;
     private GifTextView mGifView;
     private ImageView mPngView;
     private ProgressDialog mProgressDialog;
     private ConnectorConnectionState mCurrentConnectorConnectionState;
     private ProcessorConnectionState mCurrentProcessorConnectionState;
+    private ThrowState mCurrentThrowState;
     private Processor mProcessor;
     private MockConnector mConnector;
 }

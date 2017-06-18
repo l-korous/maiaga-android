@@ -228,7 +228,12 @@ public class Processor implements Runnable {
     public void reset() {
         stop();
         log.clear();
+        if(mProcessorConnectionState != ProcessorConnectionState.TryingToFetchData)
+            sendMessage("processorConnectionState", mProcessorConnectionState.toString());
         mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
+
+        if(mThrowState != NoThrow)
+            sendMessage("processorThrowState", mThrowState.toString());
         mThrowState = NoThrow;
     }
 

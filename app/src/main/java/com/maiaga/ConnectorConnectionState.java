@@ -6,11 +6,20 @@ package com.maiaga;
 
 public enum ConnectorConnectionState {
     // Initial state with no user action
-    InitializedReadyToConnect,
+    InitializedReadyToConnect("Initialized, ready to connect"),
     // During connection
-    Connecting,
+    Connecting("Connecting"),
     // Impossible to connect
-    CantConnect,
+    CantConnect("Cannot connect"),
     // Connected
-    Connected
+    Connected("Connected");
+
+    private String string;
+
+    ConnectorConnectionState(String name){string = name;}
+
+    @Override
+    public String toString() {
+        return string;
+    }
 }
