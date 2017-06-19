@@ -1,6 +1,5 @@
 package com.maiaga;
 
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -64,6 +63,11 @@ public class Connector implements Runnable {
 
     public void stop() {
         mStop = true;
+    }
+
+    public void reset() {
+        stop();
+        sendMessage("connectorState", ConnectorConnectionState.ReadyToConnect.toString());
     }
 
     public String setDeviceReturnName(String deviceAddress) {

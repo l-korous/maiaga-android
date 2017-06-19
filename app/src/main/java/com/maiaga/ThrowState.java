@@ -5,7 +5,15 @@ package com.maiaga;
  */
 
 public enum ThrowState {
-    NoThrow,
-    InThrow,
-    AfterThrow
+    NoThrow("Waiting for a throw..."),
+    InThrow("Flying..."),
+    AfterThrow("Cooool");
+
+    private String string;
+
+    ThrowState(String name){string = name;}
+
+    public String toHumanReadableString() {
+        return string;
+    }
 }

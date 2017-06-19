@@ -1,8 +1,6 @@
 package com.maiaga;
 
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,8 +12,6 @@ import java.io.PipedInputStream;
 import java.io.FileNotFoundException;
 import java.io.PipedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.UUID;
 
 /**
  * Created by lukas on 6/12/2017.
@@ -71,6 +67,11 @@ public class MockConnector implements Runnable {
 
     public void stop() {
         mStop = true;
+    }
+
+    public void reset() {
+        stop();
+        sendMessage("connectorState", ConnectorConnectionState.ReadyToConnect.toString());
     }
 
     public String setDeviceReturnName(String deviceAddress) {

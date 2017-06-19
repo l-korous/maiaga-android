@@ -2,8 +2,10 @@ package com.maiaga;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,7 +13,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,15 +35,11 @@ public class MainActivity extends AppCompatActivity {
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
         mGifView = (GifTextView) findViewById(R.id.gifView);
         mPngView = (ImageView) findViewById(R.id.pngView);
-
-        mGifView.setVisibility(View.INVISIBLE);
-        mPngView.setVisibility(View.INVISIBLE);
-        mGifView.setBackgroundResource(R.drawable.in_throw);
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        if(mConnector.isConnected()) {
+        if(mConnector.isConnected() || mCurrentConnectorConnectionState == ConnectorConnectionState.Connecting) {
             menu.findItem(R.id.connect).setVisible(false);
             menu.findItem(R.id.disconnect).setVisible(true);
         }
@@ -79,9 +76,22 @@ public class MainActivity extends AppCompatActivity {
 
     private void disconnect() {
         mProcessor.reset();
-        mConnector.stop();
-        showOkToast("Disconnected");
-        updateConnectionState();
+        mConnector.reset();
+    }
+
+    private void connect() {
+        if(!mConnector.isBluetoothAvailable()) {
+            showStatus(getResources().getText(R.string.no_bt).toString());
+        }
+        else {
+            if (!mConnector.isBluetoothEnabled()) {
+                Intent enableBtIntent = mConnector.createBluetoothEnableIntent();
+                startActivityForResult(enableBtIntent, requestBluetooth);
+            } else {
+                Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
+                startActivityForResult(connectIntent, requestDeviceConnect);
+            }
+        }
     }
 
     @Override
@@ -92,13 +102,14 @@ public class MainActivity extends AppCompatActivity {
 
     private Handler mHandler = new Handler()
     {
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void handleMessage(Message msg)
         {
             Bundle bundle = msg.getData();
             String key = bundle.getString("key", "_");
 
-            Log.i("STATUS", "Key: " + key);
+            Log.i("STATUS", "Key: " + key + ", data: " + bundle.getString("data", "_"));
             switch(key) {
                 case "processorData":
                     String data = bundle.getString("data", "_");
@@ -120,67 +131,75 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private void showConnectDisconnect(boolean showConnect) {
+        if(showConnect) {
+            findViewById(R.id.button).setVisibility(View.VISIBLE);
+        }
+        else {
+            findViewById(R.id.button).setVisibility(View.GONE);
+        }
+    }
+
     private void setCurrentConnectorConnectionState(ConnectorConnectionState connectorConnectionState) {
         mCurrentConnectorConnectionState = connectorConnectionState;
+        showStatus(mCurrentConnectorConnectionState.toHumanReadableString());
+        mPngView.setVisibility(View.GONE);
+        mGifView.setVisibility(View.GONE);
+
+        // Has to be done this way - this is the way menu is handled.
+        invalidateOptionsMenu();
+
+        // Main button.
+        if(mConnector.isConnected() || mCurrentConnectorConnectionState == ConnectorConnectionState.Connecting) {
+            findViewById(R.id.button).setVisibility(View.GONE);
+        }
+        else {
+            findViewById(R.id.button).setVisibility(View.VISIBLE);
+        }
 
         switch (mCurrentConnectorConnectionState) {
+            case ReadyToConnect:
+                break;
             case Connecting:
-                mGifView.setVisibility(View.VISIBLE);
-                mPngView.setVisibility(View.INVISIBLE);
                 mGifView.setBackgroundResource(R.drawable.connecting);
-                showStatus("Bad bluetooth signal, get closer to the MAIAGA device...");
+                mGifView.setVisibility(View.VISIBLE);
                 break;
             case Connected:
                 showOkToast("Connected");
-                mGifView.setVisibility(View.INVISIBLE);
-                mPngView.setVisibility(View.INVISIBLE);
-                updateConnectionState();
                 new Thread(mProcessor).start();
                 break;
             case CantConnect:
-                showStatus("Bad bluetooth signal, get closer to the MAIAGA device...");
-                mGifView.setVisibility(View.INVISIBLE);
-                mPngView.setVisibility(View.INVISIBLE);
-                mGifView.setBackgroundResource(R.drawable.disconnected);
-                updateConnectionState();
                 break;
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void setCurrentProcessorConnectionState(ProcessorConnectionState processorConnectionState) {
         mCurrentProcessorConnectionState = processorConnectionState;
+        showStatus(mCurrentProcessorConnectionState.toHumanReadableString());
+        mPngView.setVisibility(View.GONE);
+        mGifView.setVisibility(View.GONE);
 
         switch(mCurrentProcessorConnectionState) {
             case TryingToFetchData:
-                mGifView.setVisibility(View.VISIBLE);
-                mPngView.setVisibility(View.INVISIBLE);
                 mGifView.setBackgroundResource(R.drawable.trying_to_fetch_fata);
-                showStatus("Trying to fetch data...");
+                mGifView.setVisibility(View.VISIBLE);
                 break;
             case FetchingDataGps:
-                mGifView.setVisibility(View.INVISIBLE);
+                mPngView.setImageResource(R.drawable.fetching_data_gps);
                 mPngView.setVisibility(View.VISIBLE);
-                mGifView.setBackgroundResource(R.drawable.fetching_data_gps);
-                showStatus("Waiting for throw...");
                 break;
             case FetchingDataNoGps:
-                mGifView.setVisibility(View.INVISIBLE);
+                mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
                 mPngView.setVisibility(View.VISIBLE);
-                mGifView.setBackgroundResource(R.drawable.fetching_data_no_data_temporary);
-                showStatus("Waiting for GPS data...");
                 break;
             case FetchingDataNoDataTemporary:
-                mGifView.setVisibility(View.INVISIBLE);
+                mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
                 mPngView.setVisibility(View.VISIBLE);
-                mGifView.setBackgroundResource(R.drawable.fetching_data_no_data_temporary);
-                showStatus("Bad bluetooth signal, get closer to MAIAGA device...");
                 break;
             case FetchingDataNoDataShouldReconnect:
-                updateConnectionState();
+                mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
                 mGifView.setVisibility(View.VISIBLE);
-                mPngView.setVisibility(View.INVISIBLE);
-                mGifView.setBackgroundResource(R.drawable.connecting);
-                showStatus("Bad bluetooth signal, get closer to the MAIAGA device...");
                 new Thread(mConnector).start();
                 break;
         }
@@ -188,37 +207,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void setCurrentThrowState(ThrowState throwState) {
         mCurrentThrowState = throwState;
+        showStatus(mCurrentThrowState.toHumanReadableString());
+        mPngView.setVisibility(View.GONE);
+        mGifView.setVisibility(View.GONE);
         switch(throwState) {
             case NoThrow:
-                mGifView.setVisibility(View.INVISIBLE);
                 mPngView.setVisibility(View.VISIBLE);
-                mGifView.setBackgroundResource(R.drawable.no_throw);
-                showStatus("Waiting for a throw...");
+                mPngView.setImageResource(R.drawable.no_throw);
                 break;
             case InThrow:
                 mGifView.setVisibility(View.VISIBLE);
-                mPngView.setVisibility(View.INVISIBLE);
                 mGifView.setBackgroundResource(R.drawable.in_throw);
-                showStatus("Flying...");
             case AfterThrow:
                 mProcessor.reset();
-                showOkToast("Cooool");
                 break;
-        }
-    }
-
-    private void connect() {
-        if(!mConnector.isBluetoothAvailable()) {
-            showStatus(getResources().getText(R.string.no_bt).toString());
-        }
-        else {
-            if (!mConnector.isBluetoothEnabled()) {
-                Intent enableBtIntent = mConnector.createBluetoothEnableIntent();
-                startActivityForResult(enableBtIntent, requestBluetooth);
-            } else {
-                Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
-                startActivityForResult(connectIntent, requestDeviceConnect);
-            }
         }
     }
 
@@ -254,14 +256,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void showStatus(String status) {
         mStatusTextView.setText(status);
-    }
-
-    private void updateConnectionState() {
-        invalidateOptionsMenu();
-        if(mConnector.isConnected())
-            findViewById(R.id.button).setVisibility(View.GONE);
-        else
-            findViewById(R.id.button).setVisibility(View.VISIBLE);
     }
 
     private TextView mStatusTextView;

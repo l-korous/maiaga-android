@@ -6,15 +6,21 @@ package com.maiaga;
 
 public enum ProcessorConnectionState {
     // Connected, data not being fetched
-    TryingToFetchData,
+    TryingToFetchData("Trying to fetch data..."),
     // Good state, fetching data, all fine
-    FetchingDataGps,
+    FetchingDataGps("GPS data coming in..."),
     // As above, data being fetched, no GPS signal
-    FetchingDataNoGps,
+    FetchingDataNoGps("Waiting for GPS data..."),
     // As above, no data being fetched, but we thing BT will just kick back in when in range
-    FetchingDataNoDataTemporary,
+    FetchingDataNoDataTemporary("Bad bluetooth signal, get closer to MAIAGA device..."),
     // As above, no data being fetched, and we think BT connection broken
-    FetchingDataNoDataShouldReconnect,
-    // Reconnecting - probably the same as FetchingDataNoDataShouldReconnectNoThrow or FetchingDataNoDataShouldReconnectInThrow
-    Reconnecting
+    FetchingDataNoDataShouldReconnect("Bad bluetooth signal, get closer to MAIAGA device...");
+
+    private String string;
+
+    ProcessorConnectionState(String name){string = name;}
+
+    public String toHumanReadableString() {
+        return string;
+    }
 }
