@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import java.io.File;
 import java.io.PipedInputStream;
@@ -47,9 +48,12 @@ public class MockConnector implements Runnable {
         new Thread(new Runnable() {
             public void run() {
                 int timeInt = 235316;
+                int i = 0;
                 while (!Thread.currentThread().isInterrupted() && !mStop) {
-                    String s = "$GPRMC," + Integer.toString(timeInt) + ".000,A,4003.9040,N,10512.5792,W,0.09,144.75,141112,,*19\n" +
-                            "$GPGGA," + Integer.toString(timeInt++ + 1) + ".000,4003.9039,N,10512.5793,W,1,08,1.6,1577.9,M,-20.7,M,,0000*5F\n";
+                    String s = "$GPRMC," + Integer.toString(timeInt) + ".000,A,4003.9040,N,10512.5792,W," + (i++ % 20 > 9 ? "5" : "0") + ".00,144.75,141112,,*19\n" +
+                            "$GPGGA," + Integer.toString(timeInt) + ".000,4003.9039,N,10512.5793,W,1,08,1.6,1577.9,M,-20.7,M,,0000*5F\n";
+                    timeInt = ((timeInt / 100) * 100) + ((timeInt - ((timeInt / 100) * 100) + 1) % 60);
+                    Log.i("StringToSend", s);
                     try {
                         mPipedOutputStream.write(s.getBytes());
                         Thread.sleep(250);
@@ -59,10 +63,10 @@ public class MockConnector implements Runnable {
                         e.printStackTrace();
                     }
                 }
+
+                sendMessage("connectorState", "cantConnect");
             }
         }).start();
-
-        //sendMessage("connectorState", "cantConnect");
     }
 
     public void stop() {

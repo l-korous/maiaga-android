@@ -58,7 +58,8 @@ public class Processor implements Runnable {
                         encode(packetBytes[i]);
                     }
                 }
-                if(newDataAvailable()) {
+                if(newDataAvailable())
+                {
                     LogItem logItem = new LogItem();
                     logItem.lat = lat();
                     logItem.lng = lng();
@@ -67,28 +68,8 @@ public class Processor implements Runnable {
                     logItem.validLoc = isValidLoc();
                     logItem.validSpd = isValidSpd();
                     logItem.validAlt = isValidAlt();
-                    Long currentDate = date();
-                    Long currentTime = time();
-                    if(isValidDateTime()) {
-                        if (currentTime > 10000000) {
-                            try {
-                                DateFormat df = new SimpleDateFormat("ddMMyyHHmmss");
-                                logItem.dateTime = df.parse(Long.toString(currentDate) + (Long.toString(currentTime / 100)));
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                        } else {
-                            try {
-                                DateFormat df = new SimpleDateFormat("ddMMyyHmmss");
-                                logItem.dateTime = df.parse(Long.toString(currentDate) + (Long.toString(currentTime / 100)));
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-
+                    logItem.dateTime = new Date();
                     processLogItem(logItem);
-
                     sendMessage("processorData", logItem.toString());
                 }
             }
@@ -123,6 +104,82 @@ public class Processor implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private double getCurrentSpeed() {
+        float speedAverage = 0;
+        int i = 1, j = 0, logSize = log.size();
+        Date now = new Date();
+
+        while(i <= logSize) {
+            LogItem logItem = log.get(logSize - i);
+            if(now.getTime() - logItem.dateTime.getTime() > 2500)
+                break;
+            if(logItem.validSpd) {
+                speedAverage += logItem.spd;
+                j++;
+            }
+            i++;
+        }
+
+        return (j == 0 ? 0.0 : (speedAverage / j));
+    }
+
+    private double getCurrentAltitude() {
+        float altAverage = 0;
+        int i = 1, j = 0, logSize = log.size();
+        Date now = new Date();
+
+        while(i <= logSize) {
+            LogItem logItem = log.get(logSize - i);
+            if(now.getTime() - logItem.dateTime.getTime() > 2500)
+                break;
+            if(logItem.validAlt) {
+                altAverage += logItem.alt;
+                j++;
+            }
+            i++;
+        }
+
+        return (j == 0 ? 0.0 : (altAverage / j));
+    }
+
+    private double getCurrentLatitude() {
+        float latAverage = 0;
+        int i = 1, j = 0, logSize = log.size();
+        Date now = new Date();
+
+        while(i <= logSize) {
+            LogItem logItem = log.get(logSize - i);
+            if(now.getTime() - logItem.dateTime.getTime() > 2500)
+                break;
+            if(logItem.validLoc) {
+                latAverage += logItem.lat;
+                j++;
+            }
+            i++;
+        }
+
+        return (j == 0 ? 0.0 : (latAverage / j));
+    }
+
+    private double getCurrentLongitude() {
+        float lngAverage = 0;
+        int i = 1, j = 0, logSize = log.size();
+        Date now = new Date();
+
+        while(i <= logSize) {
+            LogItem logItem = log.get(logSize - i);
+            if(now.getTime() - logItem.dateTime.getTime() > 2500)
+                break;
+            if(logItem.validLoc) {
+                lngAverage += logItem.lng;
+                j++;
+            }
+            i++;
+        }
+
+        return (j == 0 ? 0.0 : (lngAverage / j));
     }
 
     private void processLogItem(LogItem logItem) {
@@ -209,12 +266,12 @@ public class Processor implements Runnable {
     }
 
     private boolean udpateThrowStateReturnIfChanged() {
-        if(mThrowState == NoThrow && lastLogItem.spd > 3) {
+        if(mThrowState == NoThrow && getCurrentSpeed() > 2) {
             mThrowState = InThrow;
             return true;
         }
 
-        if(mThrowState == InThrow && lastLogItem.spd < 1) {
+        if(mThrowState == InThrow && getCurrentSpeed() < 1) {
             mThrowState = AfterThrow;
             return true;
         }

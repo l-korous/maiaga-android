@@ -218,8 +218,11 @@ public class MainActivity extends AppCompatActivity {
             case InThrow:
                 mGifView.setVisibility(View.VISIBLE);
                 mGifView.setBackgroundResource(R.drawable.in_throw);
+                break;
             case AfterThrow:
                 mProcessor.reset();
+                Intent displayResultsIntent = new Intent(MainActivity.this, DisplayResultActivity.class);
+                startActivity(displayResultsIntent);
                 break;
         }
     }

@@ -307,7 +307,11 @@ Java_com_maiaga_Processor_isValidDateTime(JNIEnv *env, jobject instance) {
 
 JNIEXPORT jboolean JNICALL
 Java_com_maiaga_Processor_newDataAvailable(JNIEnv *env, jobject instance) {
-    return tinyGPSPlus.time.isUpdated();
+    return (
+            tinyGPSPlus.altitude.isUpdated() ||
+            tinyGPSPlus.speed.isUpdated() ||
+            tinyGPSPlus.location.isUpdated()
+    );
 }
 }
 #endif // def(__TinyGPSPlus_h)
