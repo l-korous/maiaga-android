@@ -6,7 +6,7 @@ package com.maiaga;
 
 public enum ProcessorConnectionState {
     // Connected, data not being fetched
-    TryingToFetchData("Trying to fetch data..."),
+    TryingToFetchData("Connected, trying to fetch data..."),
     // Good state, fetching data, all fine
     FetchingDataGps("GPS data coming in..."),
     // As above, data being fetched, no GPS signal

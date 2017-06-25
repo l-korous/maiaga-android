@@ -7,7 +7,8 @@ package com.maiaga;
 public enum ThrowState {
     NoThrow("Waiting for a throw..."),
     InThrow("Flying..."),
-    AfterThrow("Cooool");
+    AfterThrow("Getting results..."),
+    ResultsAvailable("Good job!");
 
     private String string;
 

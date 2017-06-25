@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void disconnect() {
-        mProcessor.reset();
+        mProcessor.stopAndReset();
         mConnector.reset();
     }
 
@@ -165,7 +165,6 @@ public class MainActivity extends AppCompatActivity {
                 mGifView.setVisibility(View.VISIBLE);
                 break;
             case Connected:
-                showOkToast("Connected");
                 new Thread(mProcessor).start();
                 break;
             case CantConnect:
@@ -199,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case FetchingDataNoDataShouldReconnect:
                 mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
-                mGifView.setVisibility(View.VISIBLE);
+                mPngView.setVisibility(View.VISIBLE);
                 new Thread(mConnector).start();
                 break;
         }
@@ -220,7 +219,12 @@ public class MainActivity extends AppCompatActivity {
                 mGifView.setBackgroundResource(R.drawable.in_throw);
                 break;
             case AfterThrow:
-                mProcessor.reset();
+                mProcessor.stop();
+                mPngView.setVisibility(View.VISIBLE);
+                mPngView.setImageResource(R.drawable.after_throw);
+                break;
+            case ResultsAvailable:
+                mProcessor.stop();
                 Intent displayResultsIntent = new Intent(MainActivity.this, DisplayResultActivity.class);
                 startActivity(displayResultsIntent);
                 break;

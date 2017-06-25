@@ -77,11 +77,6 @@ public class Processor implements Runnable {
             catch (IOException ex)
             {
                 mStop = true;
-                try {
-                    mInStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
                 if(mProcessorConnectionState != ProcessorConnectionState.FetchingDataNoDataShouldReconnect) {
                     mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataShouldReconnect;
                     sendMessage("processorConnectionState", mProcessorConnectionState.toString());
@@ -98,11 +93,6 @@ public class Processor implements Runnable {
                         sendMessage("processorThrowState", mThrowState.toString());
                 }
             }
-        }
-        try {
-            mInStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -282,16 +272,30 @@ public class Processor implements Runnable {
         mStop = true;
     }
 
-    public void reset() {
+    public void stopAndGetResults() {
+        stop();
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mThrowState = ThrowState.ResultsAvailable;
+                sendMessage("processorThrowState", mThrowState.toString());
+            }
+        }, 2000);
+    }
+
+    public void stopAndReset() {
         stop();
         log.clear();
-        if(mProcessorConnectionState != ProcessorConnectionState.TryingToFetchData)
+        if(mProcessorConnectionState != ProcessorConnectionState.TryingToFetchData) {
+            mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
             sendMessage("processorConnectionState", mProcessorConnectionState.toString());
-        mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
+        }
 
-        if(mThrowState != NoThrow)
+        if(mThrowState != NoThrow) {
+            mThrowState = NoThrow;
             sendMessage("processorThrowState", mThrowState.toString());
-        mThrowState = NoThrow;
+        }
     }
 
     public void setStream(InputStream inStream) {
@@ -312,7 +316,7 @@ public class Processor implements Runnable {
     private ProcessorConnectionState mProcessorConnectionState;
     private ThrowState mThrowState;
     private Handler mHandler;
-    private boolean mStop;
+    public boolean mStop;
     private InputStream mInStream;
     private Date mLastDataDateTime;
 }
