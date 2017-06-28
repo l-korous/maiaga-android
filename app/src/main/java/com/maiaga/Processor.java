@@ -44,6 +44,7 @@ public class Processor implements Runnable {
     public void run() {
         mStop = false;
         mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
+        sendMessage("processorConnectionState", mProcessorConnectionState.toString());
         mThrowState = NoThrow;
         while(!Thread.currentThread().isInterrupted() && !mStop)
         {

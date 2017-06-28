@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
+        mDataTextView = (TextView) findViewById(R.id.dataTextView);
         mGifView = (GifTextView) findViewById(R.id.gifView);
         mPngView = (ImageView) findViewById(R.id.pngView);
     }
@@ -113,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
             switch(key) {
                 case "processorData":
                     String data = bundle.getString("data", "_");
-                    mStatusTextView.setText(data);
+                    mDataTextView.setText(data);
                     break;
                 case "connectorState":
                     ConnectorConnectionState connectorConnectionState = ConnectorConnectionState.valueOf(bundle.getString("data"));
@@ -161,8 +162,8 @@ public class MainActivity extends AppCompatActivity {
             case ReadyToConnect:
                 break;
             case Connecting:
-                mGifView.setBackgroundResource(R.drawable.connecting);
                 mGifView.setVisibility(View.VISIBLE);
+                mGifView.setBackgroundResource(R.drawable.connecting);
                 break;
             case Connected:
                 new Thread(mProcessor).start();
@@ -181,24 +182,24 @@ public class MainActivity extends AppCompatActivity {
 
         switch(mCurrentProcessorConnectionState) {
             case TryingToFetchData:
-                mGifView.setBackgroundResource(R.drawable.trying_to_fetch_fata);
                 mGifView.setVisibility(View.VISIBLE);
+                mGifView.setBackgroundResource(R.drawable.trying_to_fetch_fata);
                 break;
             case FetchingDataGps:
-                mPngView.setImageResource(R.drawable.fetching_data_gps);
                 mPngView.setVisibility(View.VISIBLE);
+                mPngView.setImageResource(R.drawable.fetching_data_gps);
                 break;
             case FetchingDataNoGps:
-                mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
                 mPngView.setVisibility(View.VISIBLE);
+                mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
                 break;
             case FetchingDataNoDataTemporary:
-                mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
                 mPngView.setVisibility(View.VISIBLE);
+                mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
                 break;
             case FetchingDataNoDataShouldReconnect:
-                mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
                 mPngView.setVisibility(View.VISIBLE);
+                mPngView.setImageResource(R.drawable.fetching_data_no_data_temporary);
                 new Thread(mConnector).start();
                 break;
         }
@@ -219,12 +220,11 @@ public class MainActivity extends AppCompatActivity {
                 mGifView.setBackgroundResource(R.drawable.in_throw);
                 break;
             case AfterThrow:
-                mProcessor.stop();
                 mPngView.setVisibility(View.VISIBLE);
                 mPngView.setImageResource(R.drawable.after_throw);
+                mProcessor.stopAndGetResults();
                 break;
             case ResultsAvailable:
-                mProcessor.stop();
                 Intent displayResultsIntent = new Intent(MainActivity.this, DisplayResultActivity.class);
                 startActivity(displayResultsIntent);
                 break;
@@ -266,6 +266,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private TextView mStatusTextView;
+    private TextView mDataTextView;
     private GifTextView mGifView;
     private ImageView mPngView;
     private ProgressDialog mProgressDialog;
