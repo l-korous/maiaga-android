@@ -65,9 +65,9 @@ public class Connector implements Runnable {
         mStop = true;
     }
 
-    public void reset() {
+    public void reconnect() {
         stop();
-        sendMessage("connectorState", ConnectorConnectionState.ReadyToConnect.toString());
+        run();
     }
 
     public String setDeviceReturnName(String deviceAddress) {

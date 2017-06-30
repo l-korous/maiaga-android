@@ -50,18 +50,17 @@ public class MockConnector implements Runnable {
                 int timeInt = 235316;
                 int i = 0;
                 while (!Thread.currentThread().isInterrupted() && !mStop) {
-                    if(mProcessor.mStop)
-                        continue;
-                    String s = "$GPRMC," + Integer.toString(timeInt) + ".000,A,4003.9040,N,10512.5792,W," + (i++ % 20 > 9 ? "5" : "0") + ".00,144.75,141112,,*19\n" +
+                    String s = "$GPRMC," + Integer.toString(timeInt) + ".000,A,4003.9040,N,10512.5792,W," + (i++ % 12 > 5 ? "5" : "0") + ".00,144.75,141112,,*19\n" +
                             "$GPGGA," + Integer.toString(timeInt) + ".000,4003.9039,N,10512.5793,W,1,08,1.6,1577.9,M,-20.7,M,,0000*5F\n";
                     timeInt = ((timeInt / 100) * 100) + ((timeInt - ((timeInt / 100) * 100) + 1) % 60);
-                    Log.i("StringToSend", s);
                     try {
                         mPipedOutputStream.write(s.getBytes());
-                        Thread.sleep(250);
+                        Thread.sleep(750);
                     } catch (IOException e) {
+                        mStop = true;
                         e.printStackTrace();
                     } catch (InterruptedException e) {
+                        mStop = true;
                         e.printStackTrace();
                     }
                 }
@@ -75,9 +74,9 @@ public class MockConnector implements Runnable {
         mStop = true;
     }
 
-    public void reset() {
+    public void reconnect() {
         stop();
-        sendMessage("connectorState", ConnectorConnectionState.ReadyToConnect.toString());
+        run();
     }
 
     public String setDeviceReturnName(String deviceAddress) {

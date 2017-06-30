@@ -15,7 +15,18 @@ public class DisplayResultActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_display_result);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
-
-        mStatusTextView.setText("Distance: 78 m\r\nElevation: 17.5 m\r\nMax. velocity: 42.8 km/h");
+        Result result = Result.fromString(getIntent().getExtras().getString("results"));
+        if (result != null) {
+            mStatusTextView.setText("Distance: " +
+                    result.distance +
+                    " m\r\nElevation: " +
+                    result.maxAltitude +
+                    " m\r\nMax. speed: " +
+                    result.maxSpeed +
+                    "km/h\r\nAir time: " +
+                    result.duration +
+                    " s"
+            );
+        }
     }
 }

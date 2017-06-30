@@ -3,6 +3,7 @@ package com.maiaga;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,13 +14,30 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import static com.maiaga.ProcessorConnectionState.None;
 import static com.maiaga.ThrowState.AfterThrow;
 import static com.maiaga.ThrowState.InThrow;
 import static com.maiaga.ThrowState.NoThrow;
+import static com.maiaga.ThrowState.ResultsAvailable;
 
 public class Processor implements Runnable {
+    private static final int allowFirstGpsRecordsInvalid = 5;
+    private static final int temporaryDisonnectLimitInSeconds = 5;
+    private static final int disonnectedLimitInSeconds = 30;
+    private static final int milisecondsForFloatingAverages = 2500;
+    private static final int speedForThrow = 2;
+    private static final int speedForAfterThrow = 1;
+
     Processor(Handler handler) {
         mHandler = handler;
+        mThrowState = NoThrow;
+        mProcessorConnectionState = None;
+        mThrowStartLogItem = null;
+        mThrowEndLogItem = null;
+        lastLogItem = null;
+        mStop = false;
+        mLastDataDateTime = null;
+
         log = new ArrayList<LogItem>();
     }
 
@@ -73,28 +91,65 @@ public class Processor implements Runnable {
                     processLogItem(logItem);
                     sendMessage("processorData", logItem.toString());
                 }
-            }
 
-            catch (IOException ex)
-            {
-                mStop = true;
-                if(mProcessorConnectionState != ProcessorConnectionState.FetchingDataNoDataShouldReconnect) {
-                    mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataShouldReconnect;
-                    sendMessage("processorConnectionState", mProcessorConnectionState.toString());
-                }
-            }
-            finally {
                 boolean isConnectionStateChanged = udpateConnectionStateReturnIfChanged();
-                if(isConnectionStateChanged) {
+                if(isConnectionStateChanged && mThrowState == NoThrow) {
                     sendMessage("processorConnectionState", mProcessorConnectionState.toString());
                 }
                 if(mProcessorConnectionState == ProcessorConnectionState.FetchingDataGps) {
                     boolean isThrowStateChanged = udpateThrowStateReturnIfChanged();
-                    if (isThrowStateChanged)
+                    if (isThrowStateChanged) {
                         sendMessage("processorThrowState", mThrowState.toString());
+                        if (mThrowState == AfterThrow) {
+                            sendMessage("processorThrowState", ResultsAvailable.toString(), getResults().toString());
+                            mThrowState = NoThrow;
+                            mThrowStartLogItem = null;
+                            log.clear();
+                            mLastDataDateTime = null;
+                            mThrowEndLogItem = null;
+                        }
+                    }
+                    else if(mThrowState == NoThrow && isConnectionStateChanged) {
+                        Thread.sleep(1000);
+                        sendMessage("processorThrowState", mThrowState.toString());
+                    }
                 }
             }
+            catch (IOException e) {
+                handleDisconnect();
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                handleDisconnect();
+                e.printStackTrace();
+            }
         }
+    }
+
+    private double getDistanceFromLatLonInKm(double lat1, double lon1, double lat2, double lon2) {
+        double R = 6371000;
+        double dLat = deg2rad(lat2-lat1);
+        double dLon = deg2rad(lon2-lon1);
+        double a =
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                                Math.sin(dLon/2) * Math.sin(dLon/2)
+                ;
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        double d = R * c;
+        return d;
+    }
+
+    private double deg2rad(double deg) {
+        return deg * (Math.PI/180);
+    }
+
+    private Result getResults() {
+        Result result = new Result();
+        result.duration = (mThrowEndLogItem.dateTime.getTime() - mThrowStartLogItem.dateTime.getTime()) / 1000;
+        result.maxAltitude = Math.max(mThrowEndLogItem.alt, mThrowStartLogItem.alt);
+        result.maxSpeed = Math.max(mThrowEndLogItem.spd, mThrowStartLogItem.spd);
+        result.distance = getDistanceFromLatLonInKm(mThrowStartLogItem.lat, mThrowStartLogItem.lng, mThrowEndLogItem.lat, mThrowEndLogItem.lng);
+        return result;
     }
 
     private double getCurrentSpeed() {
@@ -104,7 +159,7 @@ public class Processor implements Runnable {
 
         while(i <= logSize) {
             LogItem logItem = log.get(logSize - i);
-            if(now.getTime() - logItem.dateTime.getTime() > 2500)
+            if(now.getTime() - logItem.dateTime.getTime() > milisecondsForFloatingAverages)
                 break;
             if(logItem.validSpd) {
                 speedAverage += logItem.spd;
@@ -123,7 +178,7 @@ public class Processor implements Runnable {
 
         while(i <= logSize) {
             LogItem logItem = log.get(logSize - i);
-            if(now.getTime() - logItem.dateTime.getTime() > 2500)
+            if(now.getTime() - logItem.dateTime.getTime() > milisecondsForFloatingAverages)
                 break;
             if(logItem.validAlt) {
                 altAverage += logItem.alt;
@@ -142,7 +197,7 @@ public class Processor implements Runnable {
 
         while(i <= logSize) {
             LogItem logItem = log.get(logSize - i);
-            if(now.getTime() - logItem.dateTime.getTime() > 2500)
+            if(now.getTime() - logItem.dateTime.getTime() > milisecondsForFloatingAverages)
                 break;
             if(logItem.validLoc) {
                 latAverage += logItem.lat;
@@ -161,7 +216,7 @@ public class Processor implements Runnable {
 
         while(i <= logSize) {
             LogItem logItem = log.get(logSize - i);
-            if(now.getTime() - logItem.dateTime.getTime() > 2500)
+            if(now.getTime() - logItem.dateTime.getTime() > milisecondsForFloatingAverages)
                 break;
             if(logItem.validLoc) {
                 lngAverage += logItem.lng;
@@ -199,6 +254,11 @@ public class Processor implements Runnable {
     }
 
     private boolean udpateConnectionStateReturnIfChanged() {
+        if (mProcessorConnectionState == ProcessorConnectionState.None) {
+            Log.e("WRONG Processor State", "This should not happen.");
+            return false;
+        }
+
         if(mLastDataDateTime == null) {
             if (mProcessorConnectionState != ProcessorConnectionState.TryingToFetchData) {
                 mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
@@ -210,25 +270,14 @@ public class Processor implements Runnable {
         Date now = new Date();
         long lastDataBefore = getDateDiff(mLastDataDateTime, now, TimeUnit.SECONDS);
 
-        if(lastDataBefore >= 30) {
-            switch(mProcessorConnectionState) {
-                case TryingToFetchData:
-                case FetchingDataGps:
-                case FetchingDataNoGps:
-                case FetchingDataNoDataTemporary:
-                    mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataShouldReconnect;
-                    return true;
-                case FetchingDataNoDataShouldReconnect:
-                    return false;
-            }
-        }
+        if(lastDataBefore >= disonnectedLimitInSeconds)
+            handleDisconnect();
 
-        if(lastDataBefore > 3 && lastDataBefore < 30) {
+        if(lastDataBefore > temporaryDisonnectLimitInSeconds && lastDataBefore < disonnectedLimitInSeconds) {
             switch(mProcessorConnectionState) {
                 case TryingToFetchData:
                 case FetchingDataGps:
                 case FetchingDataNoGps:
-                case FetchingDataNoDataShouldReconnect:
                     mProcessorConnectionState = ProcessorConnectionState.FetchingDataNoDataTemporary;
                     return true;
                 case FetchingDataNoDataTemporary:
@@ -238,7 +287,7 @@ public class Processor implements Runnable {
         if(!lastLogItem.allValid()) {
             switch(mProcessorConnectionState) {
                 case TryingToFetchData:
-                    if(log.size() < 5)
+                    if(log.size() < allowFirstGpsRecordsInvalid)
                         return false;
                 case FetchingDataGps:
                 case FetchingDataNoDataTemporary:
@@ -257,46 +306,33 @@ public class Processor implements Runnable {
     }
 
     private boolean udpateThrowStateReturnIfChanged() {
-        if(mThrowState == NoThrow && getCurrentSpeed() > 2) {
+        if(mThrowState == NoThrow && getCurrentSpeed() > speedForThrow) {
             mThrowState = InThrow;
+            mThrowStartLogItem = lastLogItem;
             return true;
         }
 
-        if(mThrowState == InThrow && getCurrentSpeed() < 1) {
+        if(mThrowState == InThrow && getCurrentSpeed() < speedForAfterThrow) {
+            mThrowEndLogItem = lastLogItem;
             mThrowState = AfterThrow;
             return true;
         }
         return false;
     }
 
+    private void handleDisconnect() {
+        stop();
+        sendMessage("processorToConnector", "reconnect");
+    }
+
     public void stop() {
         mStop = true;
-    }
-
-    public void stopAndGetResults() {
-        stop();
-        final Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mThrowState = ThrowState.ResultsAvailable;
-                sendMessage("processorThrowState", mThrowState.toString());
-            }
-        }, 2000);
-    }
-
-    public void stopAndReset() {
-        stop();
+        mThrowState = NoThrow;
         log.clear();
-        if(mProcessorConnectionState != ProcessorConnectionState.TryingToFetchData) {
-            mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
-            sendMessage("processorConnectionState", mProcessorConnectionState.toString());
-        }
-
-        if(mThrowState != NoThrow) {
-            mThrowState = NoThrow;
-            sendMessage("processorThrowState", mThrowState.toString());
-        }
+        mThrowStartLogItem = null;
+        mThrowEndLogItem = null;
+        mLastDataDateTime = null;
+        mProcessorConnectionState = None;
     }
 
     public void setStream(InputStream inStream) {
@@ -312,8 +348,20 @@ public class Processor implements Runnable {
         mHandler.sendMessage(msg);
     }
 
+    private void sendMessage(String key, String data, String subData) {
+        Message msg = mHandler.obtainMessage();
+        Bundle bundle = new Bundle();
+        bundle.putString("key", key);
+        bundle.putString("data", data);
+        bundle.putString("subData", subData);
+        msg.setData(bundle);
+        mHandler.sendMessage(msg);
+    }
+
     private ArrayList<LogItem> log;
     private LogItem lastLogItem;
+    private LogItem mThrowStartLogItem;
+    private LogItem mThrowEndLogItem;
     private ProcessorConnectionState mProcessorConnectionState;
     private ThrowState mThrowState;
     private Handler mHandler;
