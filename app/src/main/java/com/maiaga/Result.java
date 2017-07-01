@@ -1,5 +1,7 @@
 package com.maiaga;
 
+import com.google.gson.Gson;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,32 +25,12 @@ public class Result {
 
     @Override
     public String toString() {
-        try {
-            OutputStream outputStream = new ByteArrayOutputStream(1000);
-            ObjectOutputStream out = new ObjectOutputStream(outputStream);
-            out.writeObject(this);
-            return out.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+        Gson g = new Gson();
+        return g.toJson(this);
     }
 
     public static Result fromString(String str) {
-        Result result = new Result();
-        try {
-            InputStream stream = new ByteArrayInputStream(str.getBytes());
-            ObjectInputStream objectInputStream = new ObjectInputStream(stream);
-            result = (Result)objectInputStream.readObject();
-            stream.close();
-            objectInputStream.close();
-            return result;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
+        Gson g = new Gson();
+        return g.fromJson(str, Result.class);
     }
 }

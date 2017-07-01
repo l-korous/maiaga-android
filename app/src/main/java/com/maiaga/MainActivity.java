@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
 
         mProcessor = new Processor(mHandler);
-        mConnector = new Connector(mHandler, mProcessor, this);
+        mConnector = new MockConnector(mHandler, mProcessor, this);
 
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent enableBtIntent = mConnector.createBluetoothEnableIntent();
                 startActivityForResult(enableBtIntent, requestBluetooth);
             } else {
-                Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
+                Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
                 startActivityForResult(connectIntent, requestDeviceConnect);
             }
         }
@@ -102,6 +102,15 @@ public class MainActivity extends AppCompatActivity {
     public void onBackPressed() {
         if(mCurrentConnectorConnectionState == ConnectorConnectionState.Connecting)
             disconnect();
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        if(mProcessor != null)
+            mProcessor.resetThrow();
+        mStatusTextView.setText("");
+        mDataTextView.setText("");
     }
 
     private Handler mHandler = new Handler()
@@ -237,7 +246,7 @@ public class MainActivity extends AppCompatActivity {
                 Bundle mBundle = new Bundle();
                 mBundle.putString("results", data);
                 displayResultsIntent.putExtras(mBundle);
-                startActivity(displayResultsIntent, mBundle);
+                startActivity(displayResultsIntent);
                 break;
         }
     }
@@ -258,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
 
             case requestBluetooth:
                 if(resultCode == RESULT_OK) {
-                    Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
+                    Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
                     startActivityForResult(connectIntent, requestDeviceConnect);
                 }
                 else {
@@ -284,5 +293,5 @@ public class MainActivity extends AppCompatActivity {
     private ProcessorConnectionState mCurrentProcessorConnectionState;
     private ThrowState mCurrentThrowState;
     private Processor mProcessor;
-    private Connector mConnector;
+    private MockConnector mConnector;
 }

@@ -50,9 +50,13 @@ public class MockConnector implements Runnable {
                 int timeInt = 235316;
                 int i = 0;
                 while (!Thread.currentThread().isInterrupted() && !mStop) {
-                    String s = "$GPRMC," + Integer.toString(timeInt) + ".000,A,4003.9040,N,10512.5792,W," + (i++ % 12 > 5 ? "5" : "0") + ".00,144.75,141112,,*19\n" +
-                            "$GPGGA," + Integer.toString(timeInt) + ".000,4003.9039,N,10512.5793,W,1,08,1.6,1577.9,M,-20.7,M,,0000*5F\n";
+                    int r = (int) Math.floor(Math.random() * 10);
+                    int r1 = (int) Math.floor(Math.random() * 10);
+                    String s = "$GPRMC," + Integer.toString(timeInt) + ".000,A,4003." + Integer.toString(r) + "040,N,10512." + Integer.toString(r) + "792,W," + (i++ % 28 > 14 ? "5" : "0") + "." + Integer.toString(r1) + "0,144.75,141112,,*19\n" +
+                            "$GPGGA," + Integer.toString(timeInt) + ".000,4003." + Integer.toString(r1) + "040,N,10512." + Integer.toString(r1) + "792,W,1,08,1.6,157" + Integer.toString(r) + ".9,M,-20.7,M,,0000*5F\n";
                     timeInt = ((timeInt / 100) * 100) + ((timeInt - ((timeInt / 100) * 100) + 1) % 60);
+
+                    Log.d("GPS DATA", s);
                     try {
                         mPipedOutputStream.write(s.getBytes());
                         Thread.sleep(750);
@@ -72,6 +76,7 @@ public class MockConnector implements Runnable {
 
     public void stop() {
         mStop = true;
+        Thread.currentThread().interrupt();
     }
 
     public void reconnect() {

@@ -63,6 +63,7 @@ public class Connector implements Runnable {
 
     public void stop() {
         mStop = true;
+        Thread.currentThread().interrupt();
     }
 
     public void reconnect() {

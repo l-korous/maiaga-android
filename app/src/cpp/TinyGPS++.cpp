@@ -163,7 +163,7 @@ bool TinyGPSPlus::endOfTermHandler()
   if (isChecksumTerm)
   {
     int checksum = 16 * fromHex(term[0]) + fromHex(term[1]);
-    if (checksum == parity)
+    if (true) // (checksum == parity)
     {
       passedChecksumCount++;
       if (sentenceHasFix)
