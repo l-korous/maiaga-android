@@ -3,6 +3,7 @@ package com.maiaga;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
@@ -19,6 +20,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import pl.droidsonroids.gif.GifImageView;
 import pl.droidsonroids.gif.GifTextView;
 
 public class MainActivity extends AppCompatActivity {
@@ -36,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
         mDataTextView = (TextView) findViewById(R.id.dataTextView);
-        mGifView = (GifTextView) findViewById(R.id.gifView);
+        mGifView = (GifImageView) findViewById(R.id.gifView);
         mPngView = (ImageView) findViewById(R.id.pngView);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
@@ -164,8 +166,12 @@ public class MainActivity extends AppCompatActivity {
     private void setCurrentConnectorConnectionState(ConnectorConnectionState connectorConnectionState) {
         mCurrentConnectorConnectionState = connectorConnectionState;
         showStatus(mCurrentConnectorConnectionState.toHumanReadableString());
-        mPngView.setVisibility(View.GONE);
-        mGifView.setVisibility(View.GONE);
+        if(mPngView.getDrawable() != null) {
+            try {
+                ((BitmapDrawable) mPngView.getDrawable()).getBitmap().recycle();
+            } catch (java.lang.RuntimeException e) {
+            }
+        }
 
         // Has to be done this way - this is the way menu is handled.
         invalidateOptionsMenu();
@@ -183,10 +189,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case Connecting:
                 mGifView.setVisibility(View.VISIBLE);
-                mGifView.setBackgroundResource(R.drawable.connecting);
+                mGifView.setImageResource(R.drawable.connecting);
                 break;
             case Connected:
-                mGifView.setBackgroundResource(R.drawable.trying_to_fetch_data);
+                mGifView.setImageResource(R.drawable.trying_to_fetch_data);
                 mGifView.setVisibility(View.VISIBLE);
                 new Thread(mProcessor).start();
                 break;
@@ -200,12 +206,18 @@ public class MainActivity extends AppCompatActivity {
         mCurrentProcessorConnectionState = processorConnectionState;
         showStatus(mCurrentProcessorConnectionState.toHumanReadableString());
         mPngView.setVisibility(View.GONE);
+        if(mPngView.getDrawable() != null) {
+            try {
+                ((BitmapDrawable) mPngView.getDrawable()).getBitmap().recycle();
+            } catch (java.lang.RuntimeException e) {
+            }
+        }
         mGifView.setVisibility(View.GONE);
 
         switch(mCurrentProcessorConnectionState) {
             case TryingToFetchData:
                 mGifView.setVisibility(View.VISIBLE);
-                mGifView.setBackgroundResource(R.drawable.trying_to_fetch_data);
+                mGifView.setImageResource(R.drawable.trying_to_fetch_data);
                 break;
             case FetchingDataGps:
                 mPngView.setVisibility(View.VISIBLE);
@@ -225,9 +237,17 @@ public class MainActivity extends AppCompatActivity {
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     private void setCurrentThrowState(ThrowState throwState, String data) {
         mCurrentThrowState = throwState;
-        showStatus(mCurrentThrowState.toHumanReadableString());
-        mPngView.setVisibility(View.GONE);
-        mGifView.setVisibility(View.GONE);
+        if(throwState != ThrowState.ResultsAvailable) {
+            showStatus(mCurrentThrowState.toHumanReadableString());
+            mPngView.setVisibility(View.GONE);
+            if(mPngView.getDrawable() != null) {
+                try {
+                    ((BitmapDrawable) mPngView.getDrawable()).getBitmap().recycle();
+                } catch (java.lang.RuntimeException e) {
+                }
+            }
+            mGifView.setVisibility(View.GONE);
+        }
         switch(throwState) {
             case NoThrow:
                 mPngView.setVisibility(View.VISIBLE);
@@ -235,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case InThrow:
                 mGifView.setVisibility(View.VISIBLE);
-                mGifView.setBackgroundResource(R.drawable.in_throw);
+                mGifView.setImageResource(R.drawable.in_throw);
                 break;
             case AfterThrow:
                 mPngView.setVisibility(View.VISIBLE);
@@ -287,7 +307,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView mStatusTextView;
     private TextView mDataTextView;
-    private GifTextView mGifView;
+    private GifImageView mGifView;
     private ImageView mPngView;
     private ConnectorConnectionState mCurrentConnectorConnectionState;
     private ProcessorConnectionState mCurrentProcessorConnectionState;

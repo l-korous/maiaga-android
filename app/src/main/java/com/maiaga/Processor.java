@@ -366,9 +366,9 @@ public class Processor implements Runnable {
     }
 
     private void sendMessage(String key, String data) {
-        // We do not send changed connection states, but we do allow to send processorToConnector messages
+        // We do not send changed connection states or data, but we do allow to send processorToConnector messages
         // processorThrowState messages are not sent in this throwState anyway
-        if(key == "processorConnectionState" && mThrowState == ResultsAvailable)
+        if((key == "processorConnectionState" || key == "processorData") && mThrowState == ResultsAvailable)
             return;
         Message msg = mHandler.obtainMessage();
         Bundle bundle = new Bundle();
@@ -379,9 +379,9 @@ public class Processor implements Runnable {
     }
 
     private void sendMessage(String key, String data, String subData) {
-        // We do not send changed connection states, but we do allow to send processorToConnector messages
+        // We do not send changed connection states or data, but we do allow to send processorToConnector messages
         // processorThrowState messages are not sent in this throwState anyway
-        if(key == "processorConnectionState" && mThrowState == ResultsAvailable)
+        if((key == "processorConnectionState" || key == "processorData") && mThrowState == ResultsAvailable)
             return;
         Message msg = mHandler.obtainMessage();
         Bundle bundle = new Bundle();
