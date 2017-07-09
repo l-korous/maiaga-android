@@ -6,13 +6,13 @@ package com.maiaga;
 
 public enum ConnectorConnectionState {
     // Initial state with no user action
-    ReadyToConnect("Ready to connect"),
+    ReadyToConnect(App.getContext().getString(R.string.ready_to_connect)),
     // During connection
-    Connecting("Connecting..."),
+    Connecting(App.getContext().getString(R.string.connecting)),
     // Impossible to connect
-    CantConnect("Cannot connect"),
+    CantConnect(App.getContext().getString(R.string.cant_connect)),
     // Connected
-    Connected("Connected");
+    Connected(App.getContext().getString(R.string.connected));
 
     private String string;
 

@@ -52,7 +52,7 @@ public class MockConnector implements Runnable {
                 while (!Thread.currentThread().isInterrupted() && !mStop) {
                     int r = (int) Math.floor(Math.random() * 10);
                     int r1 = (int) Math.floor(Math.random() * 10);
-                    String s = "$GPRMC," + Integer.toString(timeInt) + ".000,A,4003.0" + Integer.toString(r) + "40,N,10512.7" + Integer.toString(r) + "92,W," + (i++ % 28 > 14 ? "5" : "0") + "." + Integer.toString(r1) + "0,144.75,141112,,*19\n" +
+                    String s = "$GPRMC," + Integer.toString(timeInt) + ".000,A,4003.0" + Integer.toString(r) + "40,N,10512.7" + Integer.toString(r) + "92,W," + (i++ % 30 > 15 ? "5" : "0") + "." + Integer.toString(r1) + "0,144.75,141112,,*19\n" +
                             "$GPGGA," + Integer.toString(timeInt) + ".000,4003.0" + Integer.toString(r1) + "40,N,10512.7" + Integer.toString(r1) + "92,W,1,08,1.6,157" + Integer.toString(r) + ".9,M,-20.7,M,,0000*5F\n";
                     timeInt = ((timeInt / 100) * 100) + ((timeInt - ((timeInt / 100) * 100) + 1) % 60);
 

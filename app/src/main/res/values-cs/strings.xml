@@ -1,4 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Maiaga</string>
+    <string name="app_name">MAIAGA</string>
+    <string name="title_paired_devices">Spárovaná MAIAGA zařízení</string>
+    <string name="none_paired">Žádná spárovaná MAIAGA zařízení - je potřeba spárovat v nastavení Bluetooth.</string>
+    <string name="cant_connect">Nepodařilo se připojit k MAIAGA zařízení, ověřte že je zapnuté, případně restartujte.</string>
+    <string name="denied_bt">Musíte povolit zapnutí Bluetooth, MAIAGA potřebuje Bluetooth k běhu.</string>
+    <string name="could_not_close_socket">Nepodařilo se zavřít socket.</string>
+    <string name="connected">MAIAGA zařízení připojeno.</string>
+    <string name="connect">Připojit k MAIAGA zařízení</string>
+    <string name="no_bt">Na vašem zařízení není k dispozici Bluetooth, MAIAGA aplikace nebude fungovat.</string>
+    <string name="disconnected">MAIAGA zařízení odpojeno / mimo dosah.</string>
+    <string name="disconnect">Odpojit MAIAGA zařízení</string>
+    <string name="results">Výsledky</string>
+    <string name="no_throw">Čekání na let...</string>
+    <string name="in_throw">Letíme...</string>
+    <string name="after_throw">Získávání výsledků...</string>
+    <string name="results_available">Dobrá práce!</string>
+    <string name="ready_to_connect">Připraven na spojení</string>
+    <string name="connecting">Připojování...</string>
+    <string name="trying_to_fetch_data">Připojeno, zkouším dostat data...</string>
+    <string name="fetching_data_gps">Příjem GPS dat...</string>
+    <string name="fetching_data_no_gps">Čekání na GPS data...</string>
+    <string name="fetching_data_no_data_temporary">Špatný Bluetooth signál, jděte blíže k MAIAGA zařízení...</string>
+    <string name="distance">Vzdálenost</string>
+    <string name="maxAltitude">Max. výška</string>
+    <string name="maxSpeed">Max. rychlost</string>
+    <string name="airTime">Air Time</string>
 </resources>

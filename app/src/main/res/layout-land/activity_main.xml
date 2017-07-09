@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:onClick="buttonClick"
-        android:text="@string/connect_to_device"
+        android:text="@string/connect"
         app:layout_constraintTop_toBottomOf="@+id/statusTextView"
         app:layout_goneMarginTop="20dp"
         android:layout_marginTop="20dp"/>

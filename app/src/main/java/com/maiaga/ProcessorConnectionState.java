@@ -8,13 +8,13 @@ public enum ProcessorConnectionState {
     // While connector not connected, or connecting.
     None(""),
     // Connected, data not being fetched
-    TryingToFetchData("Connected, trying to fetch data..."),
+    TryingToFetchData(App.getContext().getString(R.string.trying_to_fetch_data)),
     // Good state, fetching data, all fine
-    FetchingDataGps("GPS data coming in..."),
+    FetchingDataGps(App.getContext().getString(R.string.fetching_data_gps)),
     // As above, data being fetched, no GPS signal
-    FetchingDataNoGps("Waiting for GPS data..."),
+    FetchingDataNoGps(App.getContext().getString(R.string.fetching_data_no_gps)),
     // As above, no data being fetched, but we thing BT will just kick back in when in range
-    FetchingDataNoDataTemporary("Bad bluetooth signal, get closer to MAIAGA device...");
+    FetchingDataNoDataTemporary(App.getContext().getString(R.string.fetching_data_no_data_temporary));
 
     private String string;
 

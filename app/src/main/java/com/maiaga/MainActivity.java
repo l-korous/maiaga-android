@@ -3,6 +3,7 @@ package com.maiaga;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Handler;
@@ -10,6 +11,7 @@ import android.os.Message;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -20,6 +22,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.Locale;
+
 import pl.droidsonroids.gif.GifImageView;
 import pl.droidsonroids.gif.GifTextView;
 
@@ -27,9 +31,17 @@ public class MainActivity extends AppCompatActivity {
     private static final int requestDeviceConnect = 1;
     private static final int requestBluetooth = 2;
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Resources res = getApplicationContext().getResources();
+        DisplayMetrics dm = res.getDisplayMetrics();
+        android.content.res.Configuration conf = res.getConfiguration();
+        conf.setLocale(new Locale("cs")); // API 17+ only.
+        res.updateConfiguration(conf, dm);
+
         Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
 
         mProcessor = new Processor(mHandler);
@@ -239,15 +251,18 @@ public class MainActivity extends AppCompatActivity {
         mCurrentThrowState = throwState;
         if(throwState != ThrowState.ResultsAvailable) {
             showStatus(mCurrentThrowState.toHumanReadableString());
+
             mPngView.setVisibility(View.GONE);
-            if(mPngView.getDrawable() != null) {
+            if (mPngView.getDrawable() != null) {
                 try {
                     ((BitmapDrawable) mPngView.getDrawable()).getBitmap().recycle();
+                    mPngView.setImageDrawable(null);
                 } catch (java.lang.RuntimeException e) {
                 }
             }
-            mGifView.setVisibility(View.GONE);
         }
+
+        mGifView.setVisibility(View.GONE);
         switch(throwState) {
             case NoThrow:
                 mPngView.setVisibility(View.VISIBLE);

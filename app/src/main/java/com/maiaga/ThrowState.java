@@ -5,11 +5,11 @@ package com.maiaga;
  */
 
 public enum ThrowState {
-    NoThrow("Waiting for a throw..."),
-    InThrow("Flying..."),
-    AfterThrow("Getting results..."),
+    NoThrow(App.getContext().getString(R.string.no_throw)),
+    InThrow(App.getContext().getString(R.string.in_throw)),
+    AfterThrow(App.getContext().getString(R.string.after_throw)),
     // The Processor is never physically in this state, it reports it is and then it switches to None right away.
-    ResultsAvailable("Good job!");
+    ResultsAvailable(App.getContext().getString(R.string.results_available));
 
     private String string;
 
