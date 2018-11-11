@@ -269,8 +269,8 @@ public class MainActivity extends AppCompatActivity {
                 mGifView.setImageResource(R.drawable.in_throw);
                 break;
             case AfterThrow:
-                mPngView.setVisibility(View.VISIBLE);
-                mPngView.setImageResource(R.drawable.after_throw);
+                mGifView.setVisibility(View.VISIBLE);
+                mGifView.setImageResource(R.drawable.after_throw);
                 break;
             case ResultsAvailable:
                 Intent displayResultsIntent = new Intent(MainActivity.this, DisplayResultActivity.class);
