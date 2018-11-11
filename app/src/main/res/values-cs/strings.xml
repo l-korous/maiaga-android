@@ -16,7 +16,7 @@
     <string name="in_throw">Letíme...</string>
     <string name="after_throw">Získávání výsledků...</string>
     <string name="results_available">Dobrá práce!</string>
-    <string name="ready_to_connect">Připraven na spojení</string>
+    <string name="ready_to_connect">Není spojeno</string>
     <string name="connecting">Připojování...</string>
     <string name="trying_to_fetch_data">Připojeno, zkouším dostat data...</string>
     <string name="fetching_data_gps">Příjem GPS dat...</string>
@@ -26,4 +26,6 @@
     <string name="maxAltitude">Max. výška</string>
     <string name="maxSpeed">Max. rychlost</string>
     <string name="airTime">Air Time</string>
+    <string name="general_problem">Objevila se chyba, prosím restartujte aplikaci.</string>
+    <string name="title_show_throw_library">Záznamy o hodech</string>
 </resources>

@@ -14,56 +14,65 @@ import java.util.UUID;
 
 public class Connector implements Runnable {
     public static final UUID applicationUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private static final int mmaxConnectionAttempts = 3;
+    private static final int mMaxConnectionAttempts = 3;
 
     Connector(Handler handler, Processor processor, Context context) {
         mHandler = handler;
         mStop = false;
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        mConnectorConnectionState = ConnectorConnectionState.ReadyToConnect;
         mProcessor = processor;
     }
 
     @Override
     public void run() {
+        if(mRunningThread != null)
+            mRunningThread.interrupt();
         mStop = false;
+        mRunningThread = Thread.currentThread();
         mConnectionAttempts = 0;
-        sendMessage("connectorState", ConnectorConnectionState.Connecting.toString());
+        mConnectorConnectionState = ConnectorConnectionState.Connecting;
+        sendMessage("connectorState", mConnectorConnectionState.toString());
         mBluetoothAdapter.cancelDiscovery();
-        try {
-            if(mBluetoothSocket != null)
-                mBluetoothSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        while(!shouldStopConnecting() && !isConnected()) {
+        closeSocket();
+
+        while(!mStop && !shouldStopConnecting() && !isConnected()) {
             mConnectionAttempts++;
             try {
                 mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
                 mBluetoothSocket.connect();
                 mProcessor.setStream(mBluetoothSocket.getInputStream());
-                sendMessage("connectorState", ConnectorConnectionState.Connected.toString());
+                mConnectorConnectionState = ConnectorConnectionState.Connected;
+                sendMessage("connectorState", mConnectorConnectionState.toString());
             } catch (IOException eConnectException) {
-                try {
-                    mBluetoothSocket.close();
-                    mProcessor.setStream(null);
-                }
-                catch (IOException ex) {
-                }
+                closeSocket();
             }
         }
+
         if(!isConnected()) {
-            sendMessage("connectorState", ConnectorConnectionState.CantConnect.toString());
-            try {
+            mConnectorConnectionState = ConnectorConnectionState.CantConnect;
+            sendMessage("connectorState", mConnectorConnectionState.toString());
+            closeSocket();
+        }
+    }
+
+    private void closeSocket() {
+        try {
+            if(mBluetoothSocket != null)
                 mBluetoothSocket.close();
-                mProcessor.setStream(null);
-            } catch (IOException ex) {
-            }
+            mProcessor.setStream(null);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     public void stop() {
         mStop = true;
-        Thread.currentThread().interrupt();
+        if(mRunningThread != null)
+            mRunningThread.interrupt();
+        closeSocket();
+        mConnectorConnectionState = ConnectorConnectionState.ReadyToConnect;
+        sendMessage("connectorState", mConnectorConnectionState.toString());
     }
 
     public void reconnect() {
@@ -98,7 +107,7 @@ public class Connector implements Runnable {
     private boolean shouldStopConnecting() {
         if(mStop)
             return true;
-        if(mConnectionAttempts > mmaxConnectionAttempts)
+        if(mConnectionAttempts > mMaxConnectionAttempts)
             return true;
         return false;
     }
@@ -120,5 +129,7 @@ public class Connector implements Runnable {
     private boolean mStop;
 
     private int mConnectionAttempts;
+    private ConnectorConnectionState mConnectorConnectionState;
     private Processor mProcessor;
+    private Thread mRunningThread;
 }

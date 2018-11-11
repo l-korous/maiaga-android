@@ -1,10 +1,7 @@
 package com.maiaga;
 
-import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
@@ -30,6 +27,8 @@ import pl.droidsonroids.gif.GifTextView;
 public class MainActivity extends AppCompatActivity {
     private static final int requestDeviceConnect = 1;
     private static final int requestBluetooth = 2;
+    private static final int displayResult = 3;
+    private static final int displayThrowLibrary = 3;
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Override
@@ -45,7 +44,8 @@ public class MainActivity extends AppCompatActivity {
         Thread.setDefaultUncaughtExceptionHandler(new TopExceptionHandler(this));
 
         mProcessor = new Processor(mHandler);
-        mConnector = new MockConnector(mHandler, mProcessor, this);
+        mThrowLibrary = ThrowLibrary.getSingleton();
+        mConnector = new Connector(mHandler, mProcessor, this);
 
         setContentView(R.layout.activity_main);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
@@ -86,7 +86,8 @@ public class MainActivity extends AppCompatActivity {
                 disconnect();
                 return true;
             case R.id.results:
-                return true;
+                Intent showResultsIntent = new Intent(MainActivity.this, ShowThrowLibraryActivity.class);
+                startActivityForResult(showResultsIntent, displayThrowLibrary);
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -95,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
     private void disconnect() {
         mProcessor.stop();
         mConnector.stop();
+        mDataTextView.setText("");
     }
 
     private void connect() {
@@ -106,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent enableBtIntent = mConnector.createBluetoothEnableIntent();
                 startActivityForResult(enableBtIntent, requestBluetooth);
             } else {
-                Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
+                Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
                 startActivityForResult(connectIntent, requestDeviceConnect);
             }
         }
@@ -119,12 +121,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume(){
+    protected void onResume() {
         super.onResume();
         if(mProcessor != null)
             mProcessor.resetThrow();
-        mStatusTextView.setText("");
-        mDataTextView.setText("");
     }
 
     private Handler mHandler = new Handler()
@@ -141,7 +141,8 @@ public class MainActivity extends AppCompatActivity {
             Log.i("STATUS", "Key: " + key + ", data: " + data);
             switch(key) {
                 case "processorData":
-                    mDataTextView.setText(data);
+                    if(mCurrentProcessorConnectionState == ProcessorConnectionState.FetchingDataGps)
+                        mDataTextView.setText(data);
                     break;
                 case "connectorState":
                     ConnectorConnectionState connectorConnectionState = ConnectorConnectionState.valueOf(data);
@@ -176,14 +177,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setCurrentConnectorConnectionState(ConnectorConnectionState connectorConnectionState) {
+        if(mCurrentConnectorConnectionState == connectorConnectionState)
+            return;
         mCurrentConnectorConnectionState = connectorConnectionState;
         showStatus(mCurrentConnectorConnectionState.toHumanReadableString());
-        if(mPngView.getDrawable() != null) {
-            try {
-                ((BitmapDrawable) mPngView.getDrawable()).getBitmap().recycle();
-            } catch (java.lang.RuntimeException e) {
-            }
-        }
 
         // Has to be done this way - this is the way menu is handled.
         invalidateOptionsMenu();
@@ -196,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.button).setVisibility(View.VISIBLE);
         }
 
+        mGifView.setVisibility(View.GONE);
         switch (mCurrentConnectorConnectionState) {
             case ReadyToConnect:
                 break;
@@ -209,21 +207,18 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(mProcessor).start();
                 break;
             case CantConnect:
+                mDataTextView.setText("");
                 break;
         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void setCurrentProcessorConnectionState(ProcessorConnectionState processorConnectionState) {
+        if(mCurrentProcessorConnectionState == processorConnectionState)
+            return;
         mCurrentProcessorConnectionState = processorConnectionState;
         showStatus(mCurrentProcessorConnectionState.toHumanReadableString());
         mPngView.setVisibility(View.GONE);
-        if(mPngView.getDrawable() != null) {
-            try {
-                ((BitmapDrawable) mPngView.getDrawable()).getBitmap().recycle();
-            } catch (java.lang.RuntimeException e) {
-            }
-        }
         mGifView.setVisibility(View.GONE);
 
         switch(mCurrentProcessorConnectionState) {
@@ -248,25 +243,26 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     private void setCurrentThrowState(ThrowState throwState, String data) {
+        if(mCurrentThrowState == throwState) {
+            if(mCurrentThrowState != ThrowState.NoThrow)
+                return;
+        }
         mCurrentThrowState = throwState;
-        if(throwState != ThrowState.ResultsAvailable) {
-            showStatus(mCurrentThrowState.toHumanReadableString());
+
+        if(mCurrentThrowState != ThrowState.ResultsAvailable) {
+            if(mCurrentProcessorConnectionState == ProcessorConnectionState.FetchingDataGps)
+                showStatus(mCurrentThrowState.toHumanReadableString());
 
             mPngView.setVisibility(View.GONE);
-            if (mPngView.getDrawable() != null) {
-                try {
-                    ((BitmapDrawable) mPngView.getDrawable()).getBitmap().recycle();
-                    mPngView.setImageDrawable(null);
-                } catch (java.lang.RuntimeException e) {
-                }
-            }
         }
 
         mGifView.setVisibility(View.GONE);
-        switch(throwState) {
+        switch(mCurrentThrowState) {
             case NoThrow:
-                mPngView.setVisibility(View.VISIBLE);
-                mPngView.setImageResource(R.drawable.no_throw);
+                if(mCurrentProcessorConnectionState == ProcessorConnectionState.FetchingDataGps) {
+                    mPngView.setVisibility(View.VISIBLE);
+                    mPngView.setImageResource(R.drawable.no_throw);
+                }
                 break;
             case InThrow:
                 mGifView.setVisibility(View.VISIBLE);
@@ -280,8 +276,9 @@ public class MainActivity extends AppCompatActivity {
                 Intent displayResultsIntent = new Intent(MainActivity.this, DisplayResultActivity.class);
                 Bundle mBundle = new Bundle();
                 mBundle.putString("results", data);
+                mThrowLibrary.add(data);
                 displayResultsIntent.putExtras(mBundle);
-                startActivity(displayResultsIntent);
+                startActivityForResult(displayResultsIntent, displayResult);
                 break;
         }
     }
@@ -302,11 +299,20 @@ public class MainActivity extends AppCompatActivity {
 
             case requestBluetooth:
                 if(resultCode == RESULT_OK) {
-                    Intent connectIntent = new Intent(MainActivity.this, MockDeviceListActivity.class);
+                    Intent connectIntent = new Intent(MainActivity.this, DeviceListActivity.class);
                     startActivityForResult(connectIntent, requestDeviceConnect);
                 }
                 else {
                     showStatus(getResources().getText(R.string.denied_bt).toString());
+                }
+                break;
+
+            case displayResult:
+                if(resultCode == RESULT_OK) {
+
+                }
+                else {
+                    showStatus(getResources().getText(R.string.general_problem).toString());
                 }
                 break;
         }
@@ -327,6 +333,7 @@ public class MainActivity extends AppCompatActivity {
     private ConnectorConnectionState mCurrentConnectorConnectionState;
     private ProcessorConnectionState mCurrentProcessorConnectionState;
     private ThrowState mCurrentThrowState;
+    private ThrowLibrary mThrowLibrary;
     private Processor mProcessor;
-    private MockConnector mConnector;
+    private Connector mConnector;
 }

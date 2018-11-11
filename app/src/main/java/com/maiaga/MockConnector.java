@@ -69,7 +69,7 @@ public class MockConnector implements Runnable {
                     }
                 }
 
-                sendMessage("connectorState", "cantConnect");
+                sendMessage("connectorState", "CantConnect");
             }
         }).start();
     }

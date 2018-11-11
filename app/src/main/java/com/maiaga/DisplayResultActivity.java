@@ -1,5 +1,7 @@
 package com.maiaga;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
@@ -8,8 +10,6 @@ import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.MenuItem;
 import android.widget.TextView;
-
-import com.maiaga.R;
 
 import java.text.DecimalFormat;
 import java.util.Locale;
@@ -31,17 +31,17 @@ public class DisplayResultActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_display_result);
         mStatusTextView = (TextView) findViewById(R.id.statusTextView);
-        Result result = Result.fromString(getIntent().getExtras().getString("results"));
-        if (result != null) {
-            DecimalFormat df1 = new DecimalFormat("#.0");
-            mStatusTextView.setText(getResources().getText(R.string.distance).toString() + ": " +
-                    df1.format(result.distance) +
-                    " m\r\n" + getResources().getText(R.string.maxAltitude).toString() + ": " +
-                    df1.format(result.maxAltitude) +
-                    " m\r\n" + getResources().getText(R.string.maxSpeed).toString() + ": " +
-                    df1.format(result.maxSpeed) +
-                    "km/h\r\n" + getResources().getText(R.string.airTime).toString() + ": " +
-                    df1.format(result.duration) +
+        ThrowResult throwResult = ThrowResult.fromString(getIntent().getExtras().getString("results"));
+        if (throwResult != null) {
+            DecimalFormat df1 = new DecimalFormat("##0.0");
+            mStatusTextView.setText(getResources().getText(R.string.distance).toString() + ":\t\t" +
+                    df1.format(throwResult.distance) +
+                    " m\n" + getResources().getText(R.string.maxAltitude).toString() + ":\t\t" +
+                    df1.format(throwResult.maxAltitude) +
+                    " m\n" + getResources().getText(R.string.maxSpeed).toString() + ":\t\t" +
+                    df1.format(throwResult.maxSpeed) +
+                    " km/h\n" + getResources().getText(R.string.airTime).toString() + ":\t\t" +
+                    df1.format(throwResult.duration) +
                     " s"
             );
         }
@@ -59,6 +59,8 @@ public class DisplayResultActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        Intent mBackIntent = new Intent();
+        setResult(Activity.RESULT_OK, mBackIntent);
         finish();
     }
 }

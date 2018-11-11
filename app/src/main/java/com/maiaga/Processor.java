@@ -7,8 +7,6 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,11 +21,11 @@ import static com.maiaga.ThrowState.ResultsAvailable;
 public class Processor implements Runnable {
     private static final int allowFirstGpsRecordsInvalid = 5;
     private static final int temporaryDisonnectLimitInSeconds = 5;
-    private static final int disonnectedLimitInSeconds = 30;
-    private static final int milisecondsForFloatingAverages = 2500;
-    private static final int speedForThrow = 2;
+    private static final int disonnectedLimitInSeconds = 20;
+    private static final int milisecondsForFloatingAverages = 1500;
+    private static final int speedForThrow = 1;
     private static final int speedForAfterThrow = 1;
-    private static final int minThrowDurationInMiliseconds = 4000;
+    private static final int minThrowDurationInMiliseconds = 2000;
 
     Processor(Handler handler) {
         mHandler = handler;
@@ -61,7 +59,10 @@ public class Processor implements Runnable {
 
     @Override
     public void run() {
+        if(mRunningThread != null)
+            mRunningThread.interrupt();
         mStop = false;
+        mRunningThread = Thread.currentThread();
         mProcessorConnectionState = ProcessorConnectionState.TryingToFetchData;
         sendMessage("processorConnectionState", mProcessorConnectionState.toString());
         mThrowState = NoThrow;
@@ -70,7 +71,7 @@ public class Processor implements Runnable {
             try
             {
                 final int bytesAvailable = mInStream.available();
-                if(bytesAvailable > 0)
+                if(!mStop && bytesAvailable > 0)
                 {
                     final byte[] packetBytes = new byte[bytesAvailable];
                     mInStream.read(packetBytes);
@@ -78,7 +79,7 @@ public class Processor implements Runnable {
                         encode(packetBytes[i]);
                     }
                 }
-                if(newDataAvailable())
+                if(!mStop && newDataAvailable())
                 {
                     LogItem logItem = new LogItem();
                     logItem.lat = lat();
@@ -93,18 +94,18 @@ public class Processor implements Runnable {
                     sendMessage("processorData", logItem.toString());
                 }
 
-                boolean isConnectionStateChanged = udpateConnectionStateReturnIfChanged();
-                if(isConnectionStateChanged && mThrowState == NoThrow) {
+                boolean isConnectionStateChanged = !mStop && udpateConnectionStateReturnIfChanged();
+                if(!mStop && isConnectionStateChanged && mThrowState == NoThrow) {
                     sendMessage("processorConnectionState", mProcessorConnectionState.toString());
                 }
-                if(mProcessorConnectionState == ProcessorConnectionState.FetchingDataGps && mThrowState != ResultsAvailable) {
+                if(!mStop && mProcessorConnectionState == ProcessorConnectionState.FetchingDataGps && mThrowState != ResultsAvailable) {
                     boolean isThrowStateChanged = udpateThrowStateReturnIfChanged();
                     if (isThrowStateChanged) {
                         sendMessage("processorThrowState", mThrowState.toString());
                         if (mThrowState == AfterThrow) {
                             mThrowState = ResultsAvailable;
-                            Result result = getResults();
-                            String resultString = result.toString();
+                            ThrowResult throwResult = getResults();
+                            String resultString = throwResult.toString();
                             sendMessage("processorThrowState", mThrowState.toString(), resultString);
                             mThrowStartLogItem = null;
                             log.clear();
@@ -117,28 +118,24 @@ public class Processor implements Runnable {
                         sendMessage("processorThrowState", mThrowState.toString());
                     }
                 }
+                Thread.sleep(900);
             }
             catch (IOException e) {
-                handleDisconnect();
+                if(!mStop)
+                    handleDisconnect();
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                handleDisconnect();
+                if(!mStop)
+                    handleDisconnect();
                 e.printStackTrace();
             }
         }
     }
 
     private double getDistanceFromLatLonInKm(double lat1, double lon1, double lat2, double lon2) {
-        double R = 6371000;
-        double dLat = deg2rad(lat2-lat1);
-        double dLon = deg2rad(lon2-lon1);
-        double a =
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-                                Math.sin(dLon/2) * Math.sin(dLon/2)
-                ;
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        double d = R * c;
+        double dLat = 112000 * (lat2 - lat1);
+        double dLon = 112000 * (lon2 - lon1);
+        double d = Math.sqrt(dLat * dLat + dLon * dLon);
         return d;
     }
 
@@ -146,19 +143,22 @@ public class Processor implements Runnable {
         return deg * (Math.PI/180);
     }
 
-    private Result getResults() {
-        Result result = new Result();
-        result.duration = (mThrowEndLogItem.dateTime.getTime() - mThrowStartLogItem.dateTime.getTime()) / 1000;
-        result.maxAltitude = 0.;
-        result.maxSpeed = mThrowStartLogItem.spd;
+    private ThrowResult getResults() {
+        ThrowResult throwResult = new ThrowResult();
+        SimpleDateFormat sdfDate = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        Date now = new Date();
+        throwResult.time = sdfDate.format(now);
+        throwResult.duration = (mThrowEndLogItem.dateTime.getTime() - mThrowStartLogItem.dateTime.getTime()) / 1000;
+        throwResult.maxAltitude = 0.;
+        throwResult.maxSpeed = mThrowStartLogItem.spd;
         for(LogItem logItem : log) {
             if(logItem.dateTime.getTime() > mThrowStartTime && logItem.dateTime.getTime() <= mThrowEndTime) {
-                result.maxAltitude = Math.max(logItem.alt - mThrowStartLogItem.alt, result.maxAltitude);
-                result.maxSpeed = Math.max(logItem.spd, result.maxSpeed);
+                throwResult.maxAltitude = Math.max(logItem.alt - mThrowStartLogItem.alt, throwResult.maxAltitude);
+                throwResult.maxSpeed = Math.max(logItem.spd, throwResult.maxSpeed);
             }
         }
-        result.distance = getDistanceFromLatLonInKm(mThrowStartLogItem.lat, mThrowStartLogItem.lng, mThrowEndLogItem.lat, mThrowEndLogItem.lng);
-        return result;
+        throwResult.distance = getDistanceFromLatLonInKm(mThrowStartLogItem.lat, mThrowStartLogItem.lng, mThrowEndLogItem.lat, mThrowEndLogItem.lng);
+        return throwResult;
     }
 
     private double getCurrentSpeed() {
@@ -342,24 +342,25 @@ public class Processor implements Runnable {
     }
 
     public void stop() {
-        Thread.currentThread().interrupt();
         mStop = true;
-        mThrowState = NoThrow;
+        if(mRunningThread != null)
+            mRunningThread.interrupt();
+
         log.clear();
-        mThrowStartLogItem = null;
-        mThrowEndLogItem = null;
         mLastDataDateTime = null;
+
         mProcessorConnectionState = None;
+        sendMessage("processorConnectionState", mProcessorConnectionState.toString());
+
+        resetThrow();
     }
 
     public void resetThrow(){
         mThrowState = NoThrow;
-        if(mProcessorConnectionState == ProcessorConnectionState.FetchingDataGps)
-            sendMessage("processorThrowState", mThrowState.toString());
-        else
-            sendMessage("processorConnectionState", mProcessorConnectionState.toString());
+        mThrowStartLogItem = null;
+        mThrowEndLogItem = null;
+        sendMessage("processorThrowState", mThrowState.toString());
     }
-
 
     public void setStream(InputStream inStream) {
         mInStream = inStream;
@@ -404,4 +405,5 @@ public class Processor implements Runnable {
     public boolean mStop;
     private InputStream mInStream;
     private Date mLastDataDateTime;
+    private Thread mRunningThread;
 }
